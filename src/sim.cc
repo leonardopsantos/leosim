@@ -9,13 +9,9 @@
 #include <fstream>
 
 #include "sim.hh"
-#include "sim_instruction.hh"
 
-simulator::simulator(std::ifstream &input){
-
+simulator::simulator(std::ifstream &input):system(input) {
 	this->current_tick = 0;
-
-
 }
 
 void simulator::run() {

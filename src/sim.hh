@@ -11,12 +11,14 @@
 #include <iostream>
 #include <fstream>
 
+#include "sim_system.hh"
+
 class simulator {
 public:
 	simulator(std::ifstream &input);
 	void run();
 
-
+	sim_system system;
 
 private:
 	int current_tick;
