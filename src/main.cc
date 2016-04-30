@@ -8,7 +8,7 @@
 #include <iostream>
 #include <fstream>
 
-#include <sim.hh>
+#include "sim.hh"
 
 using namespace std;
 
