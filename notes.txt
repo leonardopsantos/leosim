@@ -1,0 +1,1 @@
+http://kwilson.me.uk/blog/create-a-scratch-branch-in-git/
