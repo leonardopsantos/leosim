@@ -11,6 +11,8 @@
 #include <iostream>
 #include <fstream>
 
+#include "sim_memory.hh"
+
 class sim_system {
 public:
 	cache l1dcache, l1icache;
