@@ -6,12 +6,16 @@
  */
 
 #include <map>
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <regex>
 
 #include "sim_instruction.hh"
 #include "sim_memory.hh"
 #include "sim_system.hh"
 
-memory::memory() {}
+using namespace std;
 
 memory::memory(const memory& o) {
 	this->latency = o.latency;
@@ -31,14 +35,11 @@ int memory::next_tick(void) {
 	return 0;
 }
 
-cache::cache() {}
-
 cache::cache(const cache& o):memory(o.latency) {
 	this->hit_ratio = o.hit_ratio;
 }
 
-cache::cache(int lat, int ratio){
-	this->latency = lat;
+cache::cache(int lat, int ratio): memory(lat) {
 	this->hit_ratio = ratio;
 }
 
@@ -58,4 +59,46 @@ instruction* memory::get_content(unsigned long int address) {
 
 void memory::set_content(unsigned long int address, instruction* inst) {
 	this->content[address] = inst;
+}
+
+int memory::fill(std::ifstream &infile) {
+
+	if( infile.is_open() == false )
+		return -1;
+
+	unsigned long int curr_addr = 0;
+
+	string line;
+	smatch base_match;
+
+	regex org_regex("^[ \t]*org:[ \t]+0x([0-9a-fA-F]+)", std::regex_constants::egrep);
+//	regex movimm_regex("^[ \t]*mov[ \t]+[rR]([0-9]+),[ \t]*#([0-9])+", std::regex_constants::egrep);
+	regex movimm_regex("^[ \t]*mov[ \t]+[rR]([0-9]+),[ \t]*(#([0-9])+|#0x([0-9a-fA-F]+))", std::regex_constants::egrep);
+	regex mov_regex("^[ \t]*mov[ \t]+[rR]([0-9]+),[ \t]*[rR]([0-9]+)", std::regex_constants::egrep);
+
+	while( getline(infile,line) ) {
+		if( regex_match(line, base_match, org_regex)) {
+			if( base_match.size() == 2 ) {
+				curr_addr = stol(base_match[1].str(), nullptr, 16);
+				cout << "curr_addr = " << curr_addr << endl;
+			}
+		} else if( regex_match(line, base_match, mov_regex)) {
+			if( base_match.size() == 3 ) {
+				cout << "MOV r" << stoi(base_match[1].str()) << ", r" << stoi(base_match[2].str()) << endl;
+			}
+		} else if( regex_match(line, base_match, movimm_regex)) {
+			cout << line << " : base_match.size() = " << base_match.size() << endl;
+			for (int i = 0; i < base_match.size(); ++i) {
+				cout << "base_match[" << i << "].str() = " << base_match[i].str() << endl;
+			}
+			if( base_match.size() == 5 ) {
+				if( base_match[2].str()[2] == 'x' )
+					cout << "MOV r" << stoi(base_match[1].str()) << ", #0x" << stoi(base_match[4].str(), nullptr, 16) << endl;
+				else
+					cout << "MOV r" << stoi(base_match[1].str()) << ", #" << stoi(base_match[3].str()) << endl;
+			}
+		} else // regex_search
+			cout << "Not matched" << line << endl;
+	}
+	return 0;
 }

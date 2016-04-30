@@ -7,4 +7,5 @@
 
 sim_system::sim_system(std::ifstream& input):l1dcache(20, 950),
 	l1icache(20, 950) {
+	l1icache.fill(input);
 }
