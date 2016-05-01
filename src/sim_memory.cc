@@ -80,6 +80,9 @@ int memory::fill(std::ifstream &infile) {
 	regex ldr_pre_regex("^[ \t]*(ldr|str)[ \t]*r([0-9]+),[ \t]*\\[r([0-9]+),[ \t]*#(([-0-9]+)|([-0]+x[0-9a-f]+))\]( !|!)[ \t]*$", std::regex_constants::extended);
 	regex ldr_post_regex("^[ \t]*(ldr|str)[ \t]*r([0-9]+),[ \t]*\\[r([0-9]+)\],[ \t]*#(([-0-9]+)|([-0]+x[0-9a-f]+))[ \t]*$", std::regex_constants::extended);
 
+	regex ldr_addsub_regex("^[ \t]*(add|sub)[ \t]*r([0-9]+),[ \t]*r([0-9]+),[ \t]*r([0-9]+)[ \t]*$", std::regex_constants::extended);
+	regex ldr_addimm_regex("^[ \t]*(add|sub)[ \t]*r([0-9]+),[ \t]*r([0-9]+),[ \t]*#(([0-9]+)|0x([0-9a-f]+))[ \t]*$", std::regex_constants::extended);
+
 	while( getline(infile,line) ) {
 		 if(regex_search (line, comment_regex)) {
 			 continue;
@@ -137,6 +140,30 @@ int memory::fill(std::ifstream &infile) {
 				if( base_match[1].str() == "str" )
 					cout << "STR r" << base_match[2].str() << ", [r" << base_match[3].str() << "], #" << base_match[4].str() << endl;
 			}
+		} else if (regex_match (line, base_match, ldr_addsub_regex)) {
+			if( base_match.size() == 5 ) {
+				if( base_match[1].str() == "add" )
+					cout << "ADD r" << base_match[2].str() << ", r" << base_match[3].str() << ", r" << base_match[4].str() << endl;
+				if( base_match[1].str() == "sub" )
+					cout << "SUB r" << base_match[2].str() << ", r" << base_match[3].str() << ", r" << base_match[4].str() << endl;
+			}
+
+
+
+		} else if (regex_match (line, base_match, ldr_addimm_regex)) {
+//			cout << "ADD: " << line << endl;
+//			cout << line << " : base_match.size() = " << base_match.size() << endl;
+//			for (unsigned int i = 0; i < base_match.size(); ++i) {
+//				cout << "base_match[" << i << "].str() = " << base_match[i].str() << endl;
+//			}
+
+			if( base_match.size() == 7 ) {
+				if( base_match[1].str() == "add" )
+					cout << "ADD r" << base_match[2].str() << ", r" << base_match[3].str() << ", #" << base_match[4].str() << endl;
+				if( base_match[1].str() == "sub" )
+					cout << "SUB r" << base_match[2].str() << ", r" << base_match[3].str() << ", #" << base_match[4].str() << endl;
+			}
+
 		} else {// regex_search (ldr_reg_regex, line)
 			if( line.size() > 0 )
 				cout << "Not matched" << line << endl;
