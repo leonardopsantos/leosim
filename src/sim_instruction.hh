@@ -92,6 +92,14 @@ class instructionMUL: public instruction {
 public:
 	instructionMUL();
 	instructionMUL(unsigned long int addr, long int s1, long int s2, long int d);
+	void print(ostream& where) const;
+};
+
+class instructionMLA: public instruction {
+public:
+	instructionMLA();
+	instructionMLA(unsigned long int addr, long int s1, long int s2, long int s3, long int d);
+	void print(ostream& where) const;
 };
 
 class instructionMOV:public instruction {
@@ -179,11 +187,31 @@ public:
 class instructionBR:public instruction {
 public:
 	instructionBR();
+	instructionBR(unsigned long int addr, string mem_tag);
+	void print(ostream& where) const;
+	string tag;
+};
+
+class instructionBRLink:public instructionBR {
+public:
+	instructionBRLink();
+	instructionBRLink(unsigned long int addr, string mem_tag);
+	void print(ostream& where) const;
+	string tag;
 };
 
 class instructionBRX:public instruction {
 public:
 	instructionBRX();
+	instructionBRX(unsigned long int addr, long int s1);
+	void print(ostream& where) const;
+};
+
+class instructionBLX:public instructionBRX {
+public:
+	instructionBLX();
+	instructionBLX(unsigned long int addr, long int s1);
+	void print(ostream& where) const;
 };
 
 class instructionFactory {

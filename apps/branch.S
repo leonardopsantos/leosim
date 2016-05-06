@@ -1,6 +1,6 @@
 
-	b loop
+//	b loop
 	bl loop2
 
-	bx r10
-	blx r13
+//	bx r10
+//	blx r13
