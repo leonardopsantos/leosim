@@ -66,6 +66,44 @@ int memory::fill(std::ifstream &infile) {
 	if( infile.is_open() == false )
 		return -1;
 
+	instruction *new_inst;
+
+	unsigned long int curr_addr = 0;
+
+	string line;
+	smatch base_match;
+
+    regex comment_regex("^[ \t]*//", std::regex_constants::extended);
+    regex end_regex("^[ \t]*end[ \t]*$", std::regex_constants::extended);
+	regex org_regex("^[ \t]*org:[ \t]+0x([0-9a-f]+)", std::regex_constants::extended);
+
+	while( getline(infile,line) ) {
+		 if(regex_search (line, comment_regex)) {
+			 continue;
+		} else if( regex_match(line, base_match, end_regex)) {
+			cout << "END" << endl;
+		} else if( regex_match(line, base_match, org_regex)) {
+			if( base_match.size() == 2 ) {
+				curr_addr = stol(base_match[1].str(), nullptr, 16);
+				cout << "curr_addr = " << curr_addr << endl;
+			}
+		} else {
+			new_inst = instructionFactory::buildInstruction(curr_addr, line);
+			if( new_inst != NULL ) {
+				curr_addr += 4;
+				cout << *new_inst << endl;
+			}
+		}
+	}
+	return 0;
+}
+
+#if 0
+int memory::fill(std::ifstream &infile) {
+
+	if( infile.is_open() == false )
+		return -1;
+
 	unsigned long int curr_addr = 0;
 
 	string line;
@@ -204,3 +242,5 @@ int memory::fill(std::ifstream &infile) {
 	}
 	return 0;
 }
+
+#endif
