@@ -56,7 +56,7 @@ instructionADD::instructionADD(unsigned long int addr, long int s1, long int s2,
 }
 
 void instructionADD::print(ostream& where) const {
-	where << "adadaADD r" << this->dests_idx[0] << ", r" << this->sources_idx[0] << ", r" << this->sources_idx[1];
+	where << "ADD r" << this->dests_idx[0] << ", r" << this->sources_idx[0] << ", r" << this->sources_idx[1];
 }
 
 instructionADDImm::instructionADDImm() {
@@ -100,7 +100,7 @@ instructionSUB::instructionSUB(unsigned long int addr, long int s1, long int s2,
 }
 
 void instructionSUB::print(ostream& where) const {
-	where << "subSBUB r" << this->dests_idx[0] << ", r" << this->sources_idx[0] << ", r" << this->sources_idx[1];
+	where << "SUB r" << this->dests_idx[0] << ", r" << this->sources_idx[0] << ", r" << this->sources_idx[1];
 }
 
 instructionSUBImm::instructionSUBImm() {
@@ -226,7 +226,7 @@ instructionLDR::instructionLDR(unsigned long int addr, long int s1, long int d) 
 }
 
 void instructionLDR::print(ostream& where) const {
-	where << "iiLDR r" << this->dests_idx[0] << ", [r" << this->sources_idx[0] << "]";
+	where << "LDR r" << this->dests_idx[0] << ", [r" << this->sources_idx[0] << "]";
 }
 
 instructionLDROff::instructionLDROff() {
@@ -296,7 +296,7 @@ instructionSTR::instructionSTR(unsigned long int addr, long int s1, long int d) 
 }
 
 void instructionSTR::print(ostream& where) const {
-	where << "iiSTR r" << this->dests_idx[0] << ", [r" << this->sources_idx[0] << "]";
+	where << "STR r" << this->dests_idx[0] << ", [r" << this->sources_idx[0] << "]";
 }
 
 instructionSTROff::instructionSTROff() {
@@ -396,7 +396,7 @@ instructionBLX::instructionBLX(unsigned long int addr, long int s1): instruction
 }
 
 void instructionBLX::print(ostream& where) const {
-	where << "BLXtt r" << this->sources_idx[0];
+	where << "BLX r" << this->sources_idx[0];
 }
 
 instruction* instructionFactory::buildInstruction(unsigned long int addr, string line) {
@@ -481,36 +481,30 @@ instruction* instructionFactory::buildInstruction(unsigned long int addr, string
 		new_inst = new instructionMLA(addr, stol(base_match[2].str()),
 				stol(base_match[3].str()), stol(base_match[4].str()),
 				stol(base_match[1].str()));
-	} else if (regex_match (line, base_match, branchx_regex)) {
+	} else if (regex_match (line, base_match, branchx_regex) && base_match.size() == 3 ) {
 
-		cout << line << " : base_match.size() = " << base_match.size() << endl;
-		for (unsigned int i = 0; i < base_match.size(); ++i) {
-			cout << "base_match[" << i << "].str() = " << base_match[i].str() << endl;
-		}
+//		cout << line << " : base_match.size() = " << base_match.size() << endl;
+//		for (unsigned int i = 0; i < base_match.size(); ++i) {
+//			cout << "base_match[" << i << "].str() = " << base_match[i].str() << endl;
+//		}
 
-		if( base_match.size() == 3 ) {
-			if( base_match[1].str() == "bx" ) {
-				cout << "BX r" << base_match[2].str() << endl;
-				new_inst = new instructionBRX(addr, stol(base_match[2].str()));
-			} else if( base_match[1].str() == "blx" ) {
-				cout << "BLX r" << base_match[2].str() << endl;
-				new_inst = new instructionBLX(addr, stol(base_match[2].str()));
-			}
+		if( base_match[1].str() == "bx" ) {
+			cout << "BX r" << base_match[2].str() << endl;
+			new_inst = new instructionBRX(addr, stol(base_match[2].str()));
+		} else if( base_match[1].str() == "blx" ) {
+			cout << "BLX r" << base_match[2].str() << endl;
+			new_inst = new instructionBLX(addr, stol(base_match[2].str()));
 		}
-	} else if (regex_match (line, base_match, branch_regex)) {
-			cout << line << " : base_match.size() = " << base_match.size() << endl;
-			for (unsigned int i = 0; i < base_match.size(); ++i) {
-				cout << "base_match[" << i << "].str() = " << base_match[i].str() << endl;
-			}
-		if( base_match.size() == 3 ) {
-			if( base_match[1].str() == "b" ) {
-				cout << "B " << base_match[2].str() << endl;
-				new_inst = new instructionBR(addr, base_match[2].str());
-			} else if( base_match[1].str() == "bl" ) {
-				cout << "aaBL " << base_match[2].str() << endl;
-				string s = base_match[2].str();
-				new_inst = new instructionBRLink(addr, s);
-			}
+	} else if (regex_match (line, base_match, branch_regex) && base_match.size() == 3 ) {
+//			cout << line << " : base_match.size() = " << base_match.size() << endl;
+//			for (unsigned int i = 0; i < base_match.size(); ++i) {
+//				cout << "base_match[" << i << "].str() = " << base_match[i].str() << endl;
+//			}
+		if( base_match[1].str() == "b" ) {
+			new_inst = new instructionBR(addr, base_match[2].str());
+		} else if( base_match[1].str() == "bl" ) {
+			string s = base_match[2].str();
+			new_inst = new instructionBRLink(addr, s);
 		}
 	}
 	return new_inst;
