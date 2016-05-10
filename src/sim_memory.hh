@@ -26,9 +26,10 @@ public:
 
 	int fill(std::ifstream &infile);
 
-protected:
+public:
 	int latency;
 	std::map<unsigned long int, instruction*> content;
+	std::map<string, unsigned long int> labels;
 };
 
 class cache:public memory {

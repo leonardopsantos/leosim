@@ -76,12 +76,20 @@ int memory::fill(std::ifstream &infile) {
     regex comment_regex("^[ \t]*//", std::regex_constants::extended);
     regex end_regex("^[ \t]*end[ \t]*$", std::regex_constants::extended);
 	regex org_regex("^[ \t]*org:[ \t]+0x([0-9a-f]+)", std::regex_constants::extended);
+	regex label_regex("^([a-zA-Z0-9_]+):$", std::regex_constants::extended);
 
 	while( getline(infile,line) ) {
 		 if(regex_search (line, comment_regex)) {
 			 continue;
 		} else if( regex_match(line, base_match, end_regex)) {
 			cout << "END" << endl;
+		} else if( regex_match(line, base_match, label_regex)) {
+			cout << "LABEL: " << line << " : base_match.size() = " << base_match.size() << endl;
+			for (unsigned int i = 0; i < base_match.size(); ++i) {
+				cout << "base_match[" << i << "].str() = " << base_match[i].str() << endl;
+			}
+			string s = base_match[1].str();
+			labels[s] = curr_addr;
 		} else if( regex_match(line, base_match, org_regex)) {
 			if( base_match.size() == 2 ) {
 				curr_addr = stol(base_match[1].str(), nullptr, 16);
@@ -92,9 +100,19 @@ int memory::fill(std::ifstream &infile) {
 			if( new_inst != NULL ) {
 				curr_addr += 4;
 				cout << *new_inst << endl;
+			} else {
+				cout << "NOT MATCHED!: " << line << endl;
 			}
 		}
 	}
+
+//	for(map<string, unsigned long int>::iterator iterator = labels.begin(); iterator != labels.end(); ++iterator) {
+//	    // iterator->first = key
+//	    // iterator->second = value
+//	    // Repeat if you also want to iterate through the second map.
+//		cout << "labels[" << iterator->first << "] = " << iterator->second << endl;
+//	}
+
 	return 0;
 }
 
