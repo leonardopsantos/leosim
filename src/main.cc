@@ -30,7 +30,10 @@ int main ( int argc, char *argv[])
 				", cowardly giving up...\n";
 	}
 
-	simulator leosim(infile);
+	simulator leosim;
+	if( leosim.setup(infile) < 0 ) {
+		cout << "Whoa!! Can't setup simulator! cowardly giving up...\n";
+	}
 
 	leosim.run();
 

@@ -15,7 +15,8 @@
 
 class simulator {
 public:
-	simulator(std::ifstream &input);
+	simulator();
+	int setup(std::ifstream &input);
 	void run();
 
 	sim_system system;
