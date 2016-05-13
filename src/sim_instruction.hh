@@ -60,6 +60,14 @@ public:
 	long int values[4];
 };
 
+class instructionNOP:public instruction {
+public:
+	instructionNOP();
+	instructionNOP(unsigned long int addr);
+	void print(ostream& where) const;
+};
+
+
 class instructionADD:public instruction {
 public:
 	instructionADD();

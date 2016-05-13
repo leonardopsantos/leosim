@@ -37,6 +37,18 @@ void instruction::print(ostream& where) const {
 	where << "meh!";
 }
 
+instructionNOP::instructionNOP() {
+}
+
+instructionNOP::instructionNOP(unsigned long int addr)
+{
+	this->memory_pos = addr;
+}
+
+void instructionNOP::print(ostream& where) const {
+	where << this->memory_pos << " : NOP";
+}
+
 instructionADD::instructionADD() {
 }
 
