@@ -24,4 +24,11 @@ int simulator::setup(std::ifstream &input)
 }
 
 void simulator::run() {
+	try {
+		while(1)
+			system.run();
+
+	} catch (exception_simulator_stop &stp) {
+		cout << stp.what();
+	}
 }

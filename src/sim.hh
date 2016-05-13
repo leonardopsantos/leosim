@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <exception>
 
 #include "sim_system.hh"
 
@@ -25,13 +26,11 @@ private:
 	int current_tick;
 };
 
-class clockable {
+class exception_simulator_stop: public std::exception {
 public:
-	virtual int clock_tick(void) =0;
-	virtual int next_tick(void) =0; /**< Gets the next tick */
-	virtual ~clockable() {};
-
-private:
+	const char * what () const throw () {
+	    return "STOP reached. Ending simulation.";
+	}
 };
 
 #endif /* SRC_SIM_HH_ */
