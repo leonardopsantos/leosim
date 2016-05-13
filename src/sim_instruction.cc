@@ -357,6 +357,7 @@ instructionBR::instructionBR(unsigned long int addr, string mem_tag) {
 	this->num_sources = 1;
 	this->tag = mem_tag;
 	this->memory_pos = addr;
+	this->dest = 0;
 }
 
 void instructionBR::print(ostream& where) const {
