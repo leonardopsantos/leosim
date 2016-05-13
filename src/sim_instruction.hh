@@ -45,6 +45,10 @@ class instruction {
 public:
 	instruction();
 	~instruction();
+	friend ostream& operator<<(ostream& os, const instruction& inst);
+	virtual void print(ostream& where) const;
+
+public:
 	int num_sources;
 	instSources sourcesTypes[4];
 	long int sources_idx[4];
@@ -53,11 +57,7 @@ public:
 	instDest destsTypes[4];
 	long int dests_idx[4];
 	unsigned long int memory_pos;
-
-	friend ostream& operator<<(ostream& os, const instruction& inst);
-	virtual void print(ostream& where) const;
-
-private:
+	long int values[4];
 };
 
 class instructionADD:public instruction {
@@ -190,6 +190,7 @@ public:
 	instructionBR(unsigned long int addr, string mem_tag);
 	void print(ostream& where) const;
 	string tag;
+	unsigned long int dest;
 };
 
 class instructionBRLink:public instructionBR {
@@ -197,7 +198,6 @@ public:
 	instructionBRLink();
 	instructionBRLink(unsigned long int addr, string mem_tag);
 	void print(ostream& where) const;
-	string tag;
 };
 
 class instructionBRX:public instruction {
