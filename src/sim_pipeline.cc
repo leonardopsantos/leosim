@@ -11,6 +11,8 @@
 #include "sim_memory.hh"
 
 
+instructionNOP staticNOP;
+
 sim_pipeline::sim_pipeline(sim_system *system)
 {
 	this->latency = 1;
@@ -24,6 +26,10 @@ sim_pipeline::sim_pipeline(sim_system *system)
 	this->cachedL1If = &this->system->l1dcache;
 	this->cpu = &this->system->cpu;
 	this->cpu_state = &this->system->cpu.state;
+	this->fetchToDecode = &staticNOP;
+	this->decodeToExecute = &staticNOP;
+	this->executeToMemory = &staticNOP;
+	this->memoryToCommit = &staticNOP;
 }
 
 int sim_pipeline::next_tick(unsigned long int curr_tick) {
@@ -67,11 +73,6 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick) {
 
 	unsigned long int ti = 0;
 
-	instruction *fetchToDecode;
-	instruction *decodeToExecute;
-	instruction *executeToMemory;
-	instruction *memoryToCommit;
-
 	/* COMMIT */
 
 	/* MEMORY */
@@ -80,7 +81,7 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick) {
 
 	/* DECODE */
 	if( curr_tick == this->next_tick_decode ) {
-		this->next_tick_decode = this->decode(curr_tick, fetchToDecode);
+		this->next_tick_decode = this->decode(curr_tick, this->fetchToDecode);
 	}
 	if( this->next_tick_fetch < ti )
 		ti = this->next_tick_decode;
@@ -88,7 +89,7 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick) {
 	/* FETCH */
 	if( curr_tick == this->next_tick_fetch ) {
 		this->next_tick_fetch = this->fetch(curr_tick,
-				this->cpu_state->get_pc(), &fetchToDecode);
+				this->cpu_state->get_pc(), &this->fetchToDecode);
 	}
 	if( this->next_tick_fetch < ti )
 		ti = this->next_tick_fetch;

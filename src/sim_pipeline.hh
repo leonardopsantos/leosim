@@ -42,6 +42,11 @@ public:
 	unsigned long int next_tick_execute;
 	unsigned long int next_tick_mem;
 	unsigned long int next_tick_writeback;
+
+	instruction *fetchToDecode;
+	instruction *decodeToExecute;
+	instruction *executeToMemory;
+	instruction *memoryToCommit;
 };
 
 #endif /* SRC_SIM_PIPELINE_HH_ */
