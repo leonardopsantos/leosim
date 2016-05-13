@@ -13,7 +13,7 @@
 
 #include "sim_instruction.hh"
 #include "sim_memory.hh"
-#include "sim_system.hh"
+//#include "sim_system.hh"
 
 using namespace std;
 
@@ -27,11 +27,11 @@ memory::memory(int lat) {
 
 memory::~memory() {}
 
-int memory::clock_tick(void) {
+unsigned long int memory::clock_tick(unsigned long int curr_tick) {
 	return 0;
 }
 
-int memory::next_tick(void) {
+unsigned long int memory::next_tick(unsigned long int curr_tick) {
 	return 0;
 }
 
@@ -45,12 +45,12 @@ cache::cache(int lat, int ratio): memory(lat) {
 
 cache::~cache() {}
 
-int cache::clock_tick(void) {
-	return 0;
+unsigned long int cache::clock_tick(unsigned long int curr_tick) {
+	return curr_tick+1;
 }
 
-int cache::next_tick(void) {
-	return 0;
+unsigned long int cache::next_tick(unsigned long int curr_tick) {
+	return curr_tick+1;
 }
 
 instruction* memory::get_content(unsigned long int address) {

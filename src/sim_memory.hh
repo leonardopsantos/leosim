@@ -19,12 +19,14 @@ public:
 	memory(int lat);
 	~memory();
 
-	int clock_tick(void);
-	int next_tick(void);
+	unsigned long int clock_tick(unsigned long int curr_tick);
+	unsigned long int next_tick(unsigned long int curr_tick);
 	instruction *get_content(unsigned long int address);
 	void set_content(unsigned long int address, instruction *inst);
 
 	int fill(std::ifstream &infile);
+
+	static unsigned long int get_label_address(string label);
 
 public:
 	int latency;
@@ -36,8 +38,8 @@ class cache:public memory {
 public:
 	cache(const cache&);
 	cache(int lat, int ratio);
-	int clock_tick(void);
-	int next_tick(void);
+	unsigned long int clock_tick(unsigned long int curr_tick);
+	unsigned long int next_tick(unsigned long int curr_tick);
 	~cache();
 private:
 	int hit_ratio;
