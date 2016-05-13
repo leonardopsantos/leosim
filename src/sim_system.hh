@@ -12,13 +12,20 @@
 #include <fstream>
 
 #include "sim_memory.hh"
+#include "sim_processor.hh"
 
 class sim_system {
 public:
 	cache l1dcache, l1icache;
+	sim_processor cpu;
 
-	sim_system(std::ifstream &input);
-private:
+	sim_system();
+	int setup(std::ifstream &input);
+
+	void run();
+
+public:
+	unsigned long int current_tick;
 };
 
 
