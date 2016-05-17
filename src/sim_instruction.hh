@@ -45,6 +45,8 @@ class instruction {
 public:
 	instruction();
 	~instruction();
+	virtual void execute();
+
 	friend ostream& operator<<(ostream& os, const instruction& inst);
 	virtual void print(ostream& where) const;
 
@@ -57,13 +59,15 @@ public:
 	instDest destsTypes[4];
 	long int dests_idx[4];
 	unsigned long int memory_pos;
-	long int values[4];
+	long int sources_values[4];
+	long int destination_values[4];
 };
 
 class instructionNOP:public instruction {
 public:
 	instructionNOP();
 	instructionNOP(unsigned long int addr);
+	void execute();
 	void print(ostream& where) const;
 };
 
@@ -72,6 +76,7 @@ class instructionADD:public instruction {
 public:
 	instructionADD();
 	instructionADD(unsigned long int addr, long int s1, long int s2, long int d);
+	void execute();
 	void print(ostream& where) const;
 };
 

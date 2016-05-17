@@ -27,6 +27,9 @@ instruction::instruction() {
 instruction::~instruction() {
 }
 
+void instruction::execute()
+{}
+
 ostream& operator<<(ostream& os, const instruction& inst)
 {
     inst.print(os);
@@ -43,6 +46,9 @@ instructionNOP::instructionNOP() {
 instructionNOP::instructionNOP(unsigned long int addr)
 {
 	this->memory_pos = addr;
+}
+
+void instructionNOP::execute() {
 }
 
 void instructionNOP::print(ostream& where) const {
@@ -65,6 +71,10 @@ instructionADD::instructionADD(unsigned long int addr, long int s1, long int s2,
 	this->destsTypes[0] = instDest::REGISTER;
 	this->dests_idx[0] = d;
 	this->memory_pos = addr;
+}
+
+void instructionADD::execute() {
+	this->destination_values[0] = this->sources_values[0] + this->sources_values[1];
 }
 
 void instructionADD::print(ostream& where) const {

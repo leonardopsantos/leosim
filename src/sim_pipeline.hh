@@ -24,8 +24,9 @@ public:
 
 	unsigned long int fetch(unsigned long int curr_tick, unsigned long int address, instruction **inst);
 	unsigned long int decode(unsigned long int curr_tick, instruction *inst);
-	unsigned long int execute(unsigned long int curr_tick);
-	unsigned long int commit(unsigned long int curr_tick);
+	unsigned long int execute(unsigned long int curr_tick, instruction *inst);
+	unsigned long int memory(unsigned long int curr_tick, instruction *inst);
+	unsigned long int commit(unsigned long int curr_tick, instruction *inst);
 
 public:
 	sim_system *system;
