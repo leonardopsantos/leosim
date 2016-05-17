@@ -17,51 +17,44 @@
 
 using namespace std;
 
-memory::memory(const memory& o) {
+memory::memory(const memory& o)
+{
 	this->latency = o.latency;
 }
 
-memory::memory(int lat) {
+memory::memory(int lat)
+{
 	this->latency = lat;
 }
 
-memory::~memory() {}
+memory::~memory()
+{}
 
-unsigned long int memory::clock_tick(unsigned long int curr_tick) {
+unsigned long int memory::clock_tick(unsigned long int curr_tick)
+{
 	return 0;
 }
 
-unsigned long int memory::next_tick(unsigned long int curr_tick) {
+unsigned long int memory::next_tick(unsigned long int curr_tick)
+{
 	return 0;
 }
 
-cache::cache(const cache& o):memory(o.latency) {
+cache_generic::cache_generic(const cache_generic& o):memory(o.latency)
+{
 	this->hit_ratio = o.hit_ratio;
 }
 
-cache::cache(int lat, int ratio): memory(lat) {
+cache_generic::cache_generic(int lat, int ratio): memory(lat)
+{
 	this->hit_ratio = ratio;
 }
 
-cache::~cache() {}
+cache_generic::~cache_generic()
+{}
 
-unsigned long int cache::clock_tick(unsigned long int curr_tick) {
-	return curr_tick+1;
-}
-
-unsigned long int cache::next_tick(unsigned long int curr_tick) {
-	return curr_tick+1;
-}
-
-instruction* memory::get_content(unsigned long int address) {
-	return this->content[address];
-}
-
-void memory::set_content(unsigned long int address, instruction* inst) {
-	this->content[address] = inst;
-}
-
-int memory::fill(std::ifstream &infile) {
+int cache_instructions::fill(std::ifstream &infile)
+{
 
 	if( infile.is_open() == false )
 		return -1;
@@ -129,5 +122,47 @@ int memory::fill(std::ifstream &infile) {
 		}
 
 	}
+	return 0;
+}
+
+cache_instructions::cache_instructions(int lat, int ratio):cache_generic(lat, ratio)
+{}
+
+cache_instructions::~cache_instructions()
+{}
+
+instruction* cache_instructions::get_content(unsigned long int address)
+{
+	return this->content[address];
+}
+
+void cache_instructions::set_content(unsigned long int address, instruction* inst)
+{
+	this->content[address] = inst;
+}
+
+unsigned long int cache_instructions::get_label_address(string label)
+{
+	return this->labels[label];
+}
+
+cache_data::cache_data(int lat, int ratio):cache_generic(lat, ratio)
+{}
+
+cache_data::~cache_data()
+{}
+
+long int cache_data::get_content(unsigned long int address)
+{
+	return this->content[address];
+}
+
+void cache_data::set_content(unsigned long int address, long int data)
+{
+	this->content[address] = data;
+}
+
+int cache_data::fill(std::ifstream& infile)
+{
 	return 0;
 }

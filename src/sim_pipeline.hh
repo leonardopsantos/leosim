@@ -11,6 +11,7 @@
 #include "sim_clockable.hh"
 #include "sim_processor_state.hh"
 #include "sim_instruction.hh"
+#include "sim_memory.hh"
 
 class sim_system;
 class memory;
@@ -30,8 +31,8 @@ public:
 
 public:
 	sim_system *system;
-	memory *cacheiL1If;
-	memory *cachedL1If;
+	cache_instructions *cacheiL1If;
+	cache_data *cachedL1If;
 	sim_processor *cpu;
 	sim_processor_state *cpu_state;
 

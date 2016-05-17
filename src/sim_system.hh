@@ -16,7 +16,8 @@
 
 class sim_system {
 public:
-	cache l1dcache, l1icache;
+	cache_data l1dcache;
+	cache_instructions l1icache;
 	sim_processor cpu;
 
 	sim_system();
