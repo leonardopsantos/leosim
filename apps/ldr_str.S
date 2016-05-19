@@ -17,8 +17,8 @@
 //    ldr r5, [r1], #-0x0FF
 //    ldr r5, [r1], #-7
     // register
-//	str r5, [r1]
-//	str	r7,	[r15]
+	str r5, [r1]
+	str	r7,	[r15]
 
 	// offset
 //    str r5, [r1, #-16]
