@@ -43,7 +43,7 @@ public:
 	unsigned long int next_tick_decode;
 	unsigned long int next_tick_execute;
 	unsigned long int next_tick_mem;
-	unsigned long int next_tick_writeback;
+	unsigned long int next_tick_commit;
 
 	instruction *fetchToDecode;
 	instruction *decodeToExecute;

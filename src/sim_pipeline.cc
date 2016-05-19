@@ -20,7 +20,7 @@ sim_pipeline::sim_pipeline(sim_system *system)
 	this->next_tick_decode = 0;
 	this->next_tick_execute = 0;
 	this->next_tick_mem = 0;
-	this->next_tick_writeback = 0;
+	this->next_tick_commit = 0;
 	this->system = system;
 	this->cacheiL1If = &this->system->l1icache;
 	this->cachedL1If = &this->system->l1dcache;
@@ -69,13 +69,49 @@ unsigned long int sim_pipeline::execute(unsigned long int curr_tick, instruction
 
 unsigned long int sim_pipeline::memory(unsigned long int curr_tick, instruction* inst)
 {
-	// TODO
+	for(int i = 0; i < inst->num_sources; i++) {
+		switch(inst->sourcesTypes[i]) {
+		case instSources::MEMORY:
+			inst->sources_values[i] = this->system->l1dcache.get_content(inst->sources_idx[i]);
+			break;
+		case instSources::REGISTER:
+		case instSources::IMMEDIATE:
+			break;
+		case instSources::Invalid:
+		default:
+			throw "Invalid register source type!!";
+		}
+	}
+	for(int i = 0; i < inst->num_dests; i++) {
+		switch(inst->destsTypes[i]) {
+		case instDest::MEMORY:
+			this->system->l1dcache.set_content(inst->sources_idx[i], inst->sources_values[i]);
+			break;
+		case instDest::REGISTER:
+			break;
+		case instDest::Invalid:
+		default:
+			throw "Invalid register source type!!";
+		}
+	}
 	return curr_tick+this->latency;
 }
 
 unsigned long int sim_pipeline::commit(unsigned long int curr_tick, instruction *inst)
 {
-	return 0;
+	for(int i = 0; i < inst->num_dests; i++) {
+		switch(inst->destsTypes[i]) {
+		case instDest::REGISTER:
+			this->cpu->register_write(inst->dests_idx[i], inst->destination_values[i]);
+			break;
+		case instDest::MEMORY:
+			break;
+		case instDest::Invalid:
+		default:
+			throw "Invalid register source type!!";
+		}
+	}
+	return curr_tick+this->latency;
 }
 
 int sim_pipeline::clock_tick(unsigned long int curr_tick) {
@@ -83,6 +119,9 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick) {
 	unsigned long int ti = 0;
 
 	/* COMMIT */
+	if( curr_tick == this->next_tick_commit ) {
+		this->next_tick_commit = this->commit(curr_tick, this->memoryToCommit);
+	}
 
 	/* MEMORY */
 	if( curr_tick == this->next_tick_mem ) {
@@ -109,7 +148,7 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick) {
 	}
 
 	/* check nearest clock tick */
-	ti = this->next_tick_writeback;
+	ti = this->next_tick_commit;
 	if( this->next_tick_mem < ti )
 		ti = this->next_tick_mem;
 	if( this->next_tick_execute < ti )
