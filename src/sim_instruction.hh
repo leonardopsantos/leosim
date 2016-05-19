@@ -54,7 +54,6 @@ public:
 	int num_sources;
 	instSources sourcesTypes[4];
 	long int sources_idx[4];
-	long int imm;
 	int num_dests;
 	instDest destsTypes[4];
 	long int dests_idx[4];
@@ -133,6 +132,7 @@ class instructionLDR:public instruction {
 public:
 	instructionLDR();
 	instructionLDR(unsigned long int addr, long int s1, long int d);
+	void execute();
 	void print(ostream& where) const;
 };
 
@@ -172,6 +172,7 @@ public:
 	instructionSTR();
 	instructionSTR(unsigned long int addr, long int s1, long int d);
 	void print(ostream& where) const;
+	void execute();
 	ldrIndexing indexing;
 };
 

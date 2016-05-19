@@ -21,7 +21,6 @@ instruction::instruction() {
 		this->dests_idx[i] = 0;
 	}
 	this->memory_pos = 0;
-	this->imm = 0;
 }
 
 instruction::~instruction() {
@@ -95,12 +94,12 @@ instructionADDImm::instructionADDImm(unsigned long int addr, long int s1, long i
 	this->sources_idx[0] = s1;
 	this->destsTypes[0] = instDest::REGISTER;
 	this->dests_idx[0] = d;
-	this->imm = imm;
+	this->sources_values[1] = imm;
 	this->memory_pos = addr;
 }
 
 void instructionADDImm::print(ostream& where) const {
-	where << "ADDImm r" << this->dests_idx[0] << ", r" << this->sources_idx[0] << ", #" << this->imm;
+	where << "ADDImm r" << this->dests_idx[0] << ", r" << this->sources_idx[0] << ", #" << this->sources_values[1];
 }
 
 instructionSUB::instructionSUB() {
@@ -135,16 +134,16 @@ instructionSUBImm::instructionSUBImm(unsigned long int addr, long int s1, long i
 
 	this->sourcesTypes[0] = instSources::REGISTER;
 	this->sourcesTypes[1] = instSources::IMMEDIATE;
+	this->sources_values[1] = imm;
 
 	this->sources_idx[0] = s1;
 	this->destsTypes[0] = instDest::REGISTER;
 	this->dests_idx[0] = d;
-	this->imm = imm;
 	this->memory_pos = addr;
 }
 
 void instructionSUBImm::print(ostream& where) const {
-	where << "SUBImm r" << this->dests_idx[0] << ", r" << this->sources_idx[0] << ", #" << this->imm;
+	where << "SUBImm r" << this->dests_idx[0] << ", r" << this->sources_idx[0] << ", #" << this->sources_values[1];
 }
 
 instructionMUL::instructionMUL() {
@@ -213,15 +212,15 @@ void instructionMOV::print(ostream& where) const {
 	where << this->memory_pos << " : MOV r" << this->dests_idx[0] << ", r" << this->sources_idx[0];
 }
 
-instructionMOVImm::instructionMOVImm() {
-}
+instructionMOVImm::instructionMOVImm()
+{}
 
 instructionMOVImm::instructionMOVImm(unsigned long int addr, long int imm, long int d) {
 	this->num_sources = 1;
 	this->num_dests = 1;
 
 	this->sourcesTypes[0] = instSources::IMMEDIATE;
-	this->imm = imm;
+	this->sources_values[0] = imm;
 
 	this->destsTypes[0] = instDest::REGISTER;
 	this->dests_idx[0] = d;
@@ -229,12 +228,15 @@ instructionMOVImm::instructionMOVImm(unsigned long int addr, long int imm, long 
 }
 
 void instructionMOVImm::print(ostream& where) const {
-	where << this->memory_pos << " : MOVImm r" << this->dests_idx[0] << ", #" << this->imm;
+	where << this->memory_pos << " : MOVImm r" << this->dests_idx[0] << ", #" << this->sources_values[0];
 }
 
-instructionLDR::instructionLDR() {}
+instructionLDR::instructionLDR()
+{
+}
 
-instructionLDR::instructionLDR(unsigned long int addr, long int s1, long int d) {
+instructionLDR::instructionLDR(unsigned long int addr, long int s1, long int d)
+{
 	this->num_sources = 1;
 	this->num_dests = 1;
 
@@ -245,6 +247,12 @@ instructionLDR::instructionLDR(unsigned long int addr, long int s1, long int d) 
 	this->destsTypes[0] = instDest::REGISTER;
 	this->dests_idx[0] = d;
 	this->memory_pos = addr;
+}
+
+void instructionLDR::execute()
+{
+	this->sourcesTypes[0] = instSources::MEMORY;
+	this->sources_idx[0] = this->sources_values[0];
 }
 
 void instructionLDR::print(ostream& where) const {
@@ -255,15 +263,16 @@ instructionLDROff::instructionLDROff() {
 	this->indexing = ldrIndexing::indexing_OFFSET;
 }
 
-instructionLDROff::instructionLDROff(unsigned long int addr, long int s1, long int imm, long int d) {
+instructionLDROff::instructionLDROff(unsigned long int addr, long int s1, long int imm, long int d)
+{
 	this->num_sources = 2;
 	this->num_dests = 1;
 
 	this->sourcesTypes[0] = instSources::REGISTER;
 	this->sourcesTypes[1] = instSources::IMMEDIATE;
+	this->sources_values[1] = imm;
 
 	this->sources_idx[0] = s1;
-	this->imm = imm;
 
 	this->destsTypes[0] = instDest::REGISTER;
 	this->dests_idx[0] = d;
@@ -273,7 +282,7 @@ instructionLDROff::instructionLDROff(unsigned long int addr, long int s1, long i
 }
 
 void instructionLDROff::print(ostream& where) const {
-	where << "LDRoff r" << this->dests_idx[0] << ", [r" << this->sources_idx[0] << ", #" << this->imm << "]";
+	where << "LDRoff r" << this->dests_idx[0] << ", [r" << this->sources_idx[0] << ", #" << this->sources_values[1] << "]";
 }
 
 instructionLDRPre::instructionLDRPre() {
@@ -286,7 +295,7 @@ instructionLDRPre::instructionLDRPre(unsigned long int addr, long int s1, long i
 }
 
 void instructionLDRPre::print(ostream& where) const {
-	where << "LDRpre r" << this->dests_idx[0] << ", [r" << this->sources_idx[0] << ", #" << this->imm << "] !";
+	where << "LDRpre r" << this->dests_idx[0] << ", [r" << this->sources_idx[0] << ", #" << this->sources_values[1] << "] !";
 }
 
 instructionLDRPost::instructionLDRPost() {
@@ -299,22 +308,29 @@ instructionLDRPost::instructionLDRPost(unsigned long int addr, long int s1, long
 }
 
 void instructionLDRPost::print(ostream& where) const {
-	where << "LDRpost r" << this->dests_idx[0] << ", [r" << this->sources_idx[0] << "], #" << this->imm;
+	where << "LDRpost r" << this->dests_idx[0] << ", [r" << this->sources_idx[0] << "], #" << this->sources_values[1];
 }
 
-instructionSTR::instructionSTR() {}
+instructionSTR::instructionSTR()
+{}
 
 instructionSTR::instructionSTR(unsigned long int addr, long int s1, long int d) {
-	this->num_sources = 1;
+	this->num_sources = 2;
 	this->num_dests = 1;
 
 	this->sourcesTypes[0] = instSources::REGISTER;
-
 	this->sources_idx[0] = s1;
+	this->sourcesTypes[1] = instSources::REGISTER;
+	this->sources_idx[1] = d;
 
-	this->destsTypes[0] = instDest::REGISTER;
-	this->dests_idx[0] = d;
+	this->destsTypes[0] = instDest::MEMORY;
+
 	this->memory_pos = addr;
+}
+
+void instructionSTR::execute() {
+	this->dests_idx[0] = this->sources_values[1];
+	this->destination_values[0] = this->sources_values[0];
 }
 
 void instructionSTR::print(ostream& where) const {
@@ -333,7 +349,7 @@ instructionSTROff::instructionSTROff(unsigned long int addr, long int s1, long i
 	this->sourcesTypes[1] = instSources::IMMEDIATE;
 
 	this->sources_idx[0] = s1;
-	this->imm = imm;
+	this->sources_values[1] = imm;
 
 	this->destsTypes[0] = instDest::REGISTER;
 	this->dests_idx[0] = d;
@@ -343,7 +359,7 @@ instructionSTROff::instructionSTROff(unsigned long int addr, long int s1, long i
 }
 
 void instructionSTROff::print(ostream& where) const {
-	where << "STRoff r" << this->dests_idx[0] << ", [r" << this->sources_idx[0] << ", #" << this->imm << "]";
+	where << "STRoff r" << this->dests_idx[0] << ", [r" << this->sources_idx[0] << ", #" << this->sources_values[1] << "]";
 }
 
 instructionSTRPre::instructionSTRPre() {
@@ -356,7 +372,7 @@ instructionSTRPre::instructionSTRPre(unsigned long int addr, long int s1, long i
 }
 
 void instructionSTRPre::print(ostream& where) const {
-	where << "STRpre r" << this->dests_idx[0] << ", [r" << this->sources_idx[0] << ", #" << this->imm << "] !";
+	where << "STRpre r" << this->dests_idx[0] << ", [r" << this->sources_idx[0] << ", #" << this->sources_values[1] << "] !";
 }
 
 instructionSTRPost::instructionSTRPost() {
@@ -369,7 +385,7 @@ instructionSTRPost::instructionSTRPost(unsigned long int addr, long int s1, long
 }
 
 void instructionSTRPost::print(ostream& where) const {
-	where << "STRpost r" << this->dests_idx[0] << ", [r" << this->sources_idx[0] << "], #" << this->imm;
+	where << "STRpost r" << this->dests_idx[0] << ", [r" << this->sources_idx[0] << "], #" << this->sources_values[1];
 }
 
 instructionBR::instructionBR() {
