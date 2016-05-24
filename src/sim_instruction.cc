@@ -213,6 +213,11 @@ instructionMOV::instructionMOV(unsigned long int addr, long int s1, long int d) 
 	this->memory_pos = addr;
 }
 
+void instructionMOV::execute()
+{
+	this->destination_values[0] = this->sources_values[0];
+}
+
 void instructionMOV::print(ostream& where) const {
 	where << this->memory_pos << " : MOV r" << this->dests_idx[0] << ", r" << this->sources_idx[0];
 }
@@ -230,6 +235,11 @@ instructionMOVImm::instructionMOVImm(unsigned long int addr, long int imm, long 
 	this->destsTypes[0] = instDest::REGISTER;
 	this->dests_idx[0] = d;
 	this->memory_pos = addr;
+}
+
+void instructionMOVImm::execute()
+{
+	this->destination_values[0] = this->sources_values[0];
 }
 
 void instructionMOVImm::print(ostream& where) const {
@@ -397,7 +407,6 @@ instructionBR::instructionBR() {
 }
 
 instructionBR::instructionBR(unsigned long int addr, string mem_tag) {
-	this->num_sources = 1;
 	this->tag = mem_tag;
 	this->memory_pos = addr;
 	this->dest = 0;

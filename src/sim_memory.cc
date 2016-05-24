@@ -95,7 +95,7 @@ int cache_instructions::fill(std::ifstream &infile)
 			new_inst = instructionFactory::buildInstruction(curr_addr, line);
 			if( new_inst != NULL ) {
 				content[curr_addr] = new_inst;
-				curr_addr += 4;
+				curr_addr += sizeof(unsigned long int);
 //				cout << *new_inst << endl;
 			} else {
 				cout << "NOT MATCHED!: " << line << endl;

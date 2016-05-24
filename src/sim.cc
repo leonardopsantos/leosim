@@ -29,6 +29,6 @@ void simulator::run() {
 			system.run();
 
 	} catch (exception_simulator_stop &stp) {
-		cout << stp.what();
+		cout << stp.what() << endl;
 	}
 }

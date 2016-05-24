@@ -5,13 +5,16 @@
  *      Author: lsantos
  */
 
+#include <ostream>
+
 #include "sim_pipeline.hh"
 #include "sim_instruction.hh"
 #include "sim_system.hh"
 #include "sim_memory.hh"
 
-
 instructionNOP staticNOP;
+
+using namespace std;
 
 sim_pipeline::sim_pipeline(sim_system *system)
 {
@@ -30,6 +33,17 @@ sim_pipeline::sim_pipeline(sim_system *system)
 	this->decodeToExecute = &staticNOP;
 	this->executeToMemory = &staticNOP;
 	this->memoryToCommit = &staticNOP;
+	this->lastCommit = &staticNOP;
+}
+
+ostream& operator<<(ostream& os, const sim_pipeline& pipe)
+{
+	os << "Fetch :  " << *pipe.fetchToDecode << endl;
+	os << "Decode:  " << *pipe.decodeToExecute << endl;
+	os << "Execute: " << *pipe.executeToMemory << endl;
+	os << "Memory:  " << *pipe.memoryToCommit << endl;
+	os << "Commit:  " << *pipe.lastCommit << endl;
+	return os;
 }
 
 int sim_pipeline::next_tick(unsigned long int curr_tick) {
@@ -99,6 +113,7 @@ unsigned long int sim_pipeline::memory(unsigned long int curr_tick, instruction*
 
 unsigned long int sim_pipeline::commit(unsigned long int curr_tick, instruction *inst)
 {
+	inst->commit();
 	for(int i = 0; i < inst->num_dests; i++) {
 		switch(inst->destsTypes[i]) {
 		case instDest::REGISTER:
@@ -117,25 +132,31 @@ unsigned long int sim_pipeline::commit(unsigned long int curr_tick, instruction 
 int sim_pipeline::clock_tick(unsigned long int curr_tick) {
 
 	unsigned long int ti = 0;
+	unsigned long int curr_pc = this->cpu_state->get_pc();
 
 	/* COMMIT */
+	cout << "Commit:  " << *this->memoryToCommit << endl;
 	if( curr_tick == this->next_tick_commit ) {
 		this->next_tick_commit = this->commit(curr_tick, this->memoryToCommit);
 	}
+	this->lastCommit = this->memoryToCommit;
 
 	/* MEMORY */
+	cout << "Memory:  " << *this->executeToMemory << endl;
 	if( curr_tick == this->next_tick_mem ) {
 		this->next_tick_mem = this->memory(curr_tick, this->executeToMemory);
 	}
 	this->memoryToCommit = this->executeToMemory;
 
 	/* EXECUTE */
+	cout << "Execute: " << *this->decodeToExecute << endl;
 	if( curr_tick == this->next_tick_execute ) {
-		this->next_tick_decode = this->execute(curr_tick, this->decodeToExecute);
+		this->next_tick_execute = this->execute(curr_tick, this->decodeToExecute);
 	}
 	this->executeToMemory = this->decodeToExecute;
 
 	/* DECODE */
+	cout << "Decode:  " << *this->fetchToDecode << endl;
 	if( curr_tick == this->next_tick_decode ) {
 		this->next_tick_decode = this->decode(curr_tick, this->fetchToDecode);
 	}
@@ -143,9 +164,12 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick) {
 
 	/* FETCH */
 	if( curr_tick == this->next_tick_fetch ) {
+		instruction *f;
 		this->next_tick_fetch = this->fetch(curr_tick,
-				this->cpu_state->get_pc(), &this->fetchToDecode);
+				curr_pc, &f);
+		this->fetchToDecode = (f == NULL ? &staticNOP : f);
 	}
+	cout << "Fetch:   " << *this->fetchToDecode << endl;
 
 	/* check nearest clock tick */
 	ti = this->next_tick_commit;

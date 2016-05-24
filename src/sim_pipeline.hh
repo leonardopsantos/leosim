@@ -29,6 +29,8 @@ public:
 	unsigned long int memory(unsigned long int curr_tick, instruction *inst);
 	unsigned long int commit(unsigned long int curr_tick, instruction *inst);
 
+	friend ostream& operator<<(ostream& os, const sim_pipeline& pipe);
+
 public:
 	sim_system *system;
 	cache_instructions *cacheiL1If;
@@ -49,6 +51,7 @@ public:
 	instruction *decodeToExecute;
 	instruction *executeToMemory;
 	instruction *memoryToCommit;
+	instruction *lastCommit;
 };
 
 #endif /* SRC_SIM_PIPELINE_HH_ */

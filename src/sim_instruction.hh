@@ -119,6 +119,7 @@ class instructionMOV:public instruction {
 public:
 	instructionMOV();
 	instructionMOV(unsigned long int addr, long int s1, long int d);
+	void execute();
 	void print(ostream& where) const;
 };
 
@@ -126,6 +127,7 @@ class instructionMOVImm:public instructionMOV {
 public:
 	instructionMOVImm();
 	instructionMOVImm(unsigned long int addr, long int imm, long int d);
+	void execute();
 	void print(ostream& where) const;
 };
 
