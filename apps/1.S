@@ -6,5 +6,8 @@ org: 0x00000000
 loop1:
 	mov r1, #5
 	mov r2, #5
+	nop
+	nop
 	add r3, r2, r1
+	END
 	b loop1

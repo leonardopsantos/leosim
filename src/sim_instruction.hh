@@ -46,6 +46,7 @@ public:
 	instruction();
 	~instruction();
 	virtual void execute();
+	virtual void commit();
 
 	friend ostream& operator<<(ostream& os, const instruction& inst);
 	virtual void print(ostream& where) const;
@@ -226,6 +227,14 @@ public:
 	instructionBLX();
 	instructionBLX(unsigned long int addr, long int s1);
 	void print(ostream& where) const;
+};
+
+
+class instructionEND:public instruction {
+public:
+	instructionEND();
+	void print(ostream& where) const;
+	void commit();
 };
 
 class instructionFactory {

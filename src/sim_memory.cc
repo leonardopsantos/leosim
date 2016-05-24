@@ -66,8 +66,8 @@ int cache_instructions::fill(std::ifstream &infile)
 	string line;
 	smatch base_match;
 
-    regex comment_regex("^[ \t]*//", std::regex_constants::extended);
-    regex end_regex("^[ \t]*end[ \t]*$", std::regex_constants::extended);
+	regex comment_regex("^[ \t]*//", std::regex_constants::extended);
+
 	regex org_regex("^[ \t]*org:[ \t]+0x([0-9a-fA-F]+)", std::regex_constants::extended);
 	regex label_regex("^([a-zA-Z0-9_]+):$", std::regex_constants::extended);
 
@@ -79,8 +79,6 @@ int cache_instructions::fill(std::ifstream &infile)
 
 		 if(regex_search (line, comment_regex)) {
 			 continue;
-		} else if( regex_match(line, base_match, end_regex)) {
-			cout << "END" << endl;
 		} else if( regex_match(line, base_match, label_regex)) {
 //			cout << "LABEL: " << line << " : base_match.size() = " << base_match.size() << endl;
 //			for (unsigned int i = 0; i < base_match.size(); ++i) {

@@ -7,6 +7,8 @@
 
 #include "sim_instruction.hh"
 
+#include "sim.hh"
+
 #include <cstdlib>
 
 instruction::instruction() {
@@ -34,6 +36,9 @@ ostream& operator<<(ostream& os, const instruction& inst)
     inst.print(os);
     return os;
 }
+
+void instruction::commit()
+{}
 
 void instruction::print(ostream& where) const {
 	where << "meh!";
@@ -437,11 +442,28 @@ void instructionBLX::print(ostream& where) const {
 	where << "BLX r" << this->sources_idx[0];
 }
 
+instructionEND::instructionEND()
+{}
+
+void instructionEND::print(ostream& where) const
+{
+	where << "This is the END!";
+}
+
+void instructionEND::commit()
+{
+	throw exception_simulator_stop();
+}
+
 instruction* instructionFactory::buildInstruction(unsigned long int addr, string line) {
 
 	instruction *new_inst = NULL;
 
 	smatch base_match;
+
+	regex nop_regex("^[ \t]*nop[ \t]*$", std::regex_constants::extended | std::regex_constants::icase);
+
+	regex end_regex("^[ \t]*END[ \t]*$", std::regex_constants::extended);
 
 	regex movimm_regex("^[ \t]*mov[ \t]+r([0-9]+),[ \t]*#(([-0-9])+|([-0]+x[0-9a-fA-F]+))", std::regex_constants::extended | std::regex_constants::icase);
 	regex mov_regex("^[ \t]*mov[ \t]+r([0-9]+),[ \t]*r([0-9]+)", std::regex_constants::extended | std::regex_constants::icase);
@@ -460,7 +482,9 @@ instruction* instructionFactory::buildInstruction(unsigned long int addr, string
 	regex branch_regex("^[ \t]*(b|bl)[ \t]*([0-9a-zA-Z]+)$", std::regex_constants::extended | std::regex_constants::icase);
 	regex branchx_regex("^[ \t]*(bx|blx)[ \t]*r([0-9]+)$", std::regex_constants::extended | std::regex_constants::icase);
 
-	if( regex_match(line, base_match, mov_regex) && base_match.size() == 3 ) {
+	if( regex_match(line, base_match, nop_regex) /*&& base_match.size() == 3 */ ) {
+		new_inst = new instructionNOP(addr);
+	} else if( regex_match(line, base_match, mov_regex) && base_match.size() == 3 ) {
 
 		new_inst = new instructionMOV(addr, stol(base_match[2].str()), stol(base_match[1].str()));
 
@@ -538,6 +562,8 @@ instruction* instructionFactory::buildInstruction(unsigned long int addr, string
 			string s = base_match[2].str();
 			new_inst = new instructionBRLink(addr, s);
 		}
+	} else if( regex_match(line, base_match, end_regex)) {
+		new_inst = new instructionEND();
 	}
 	return new_inst;
 }
