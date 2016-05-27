@@ -131,57 +131,47 @@ unsigned long int sim_pipeline::commit(unsigned long int curr_tick, instruction 
 
 int sim_pipeline::clock_tick(unsigned long int curr_tick) {
 
-	unsigned long int ti = 0;
 	unsigned long int curr_pc = this->cpu_state->get_pc();
+	bool halt_pipeline = false;
+
+	if( this->fetchToDecode->depends(this->decodeToExecute) == true ||
+		this->fetchToDecode->depends(this->executeToMemory) == true ||
+		this->fetchToDecode->depends(this->memoryToCommit) == true )
+		halt_pipeline = true;
 
 	/* COMMIT */
 	cout << "Commit:  " << *this->memoryToCommit << endl;
-	if( curr_tick == this->next_tick_commit ) {
-		this->next_tick_commit = this->commit(curr_tick, this->memoryToCommit);
-	}
+	this->commit(curr_tick, this->memoryToCommit);
 	this->lastCommit = this->memoryToCommit;
 
 	/* MEMORY */
 	cout << "Memory:  " << *this->executeToMemory << endl;
-	if( curr_tick == this->next_tick_mem ) {
-		this->next_tick_mem = this->memory(curr_tick, this->executeToMemory);
-	}
+	this->memory(curr_tick, this->executeToMemory);
 	this->memoryToCommit = this->executeToMemory;
 
 	/* EXECUTE */
 	cout << "Execute: " << *this->decodeToExecute << endl;
-	if( curr_tick == this->next_tick_execute ) {
-		this->next_tick_execute = this->execute(curr_tick, this->decodeToExecute);
-	}
+	this->execute(curr_tick, this->decodeToExecute);
 	this->executeToMemory = this->decodeToExecute;
 
 	/* DECODE */
 	cout << "Decode:  " << *this->fetchToDecode << endl;
-	if( curr_tick == this->next_tick_decode ) {
-		this->next_tick_decode = this->decode(curr_tick, this->fetchToDecode);
-	}
-	this->decodeToExecute = this->fetchToDecode;
+	if( halt_pipeline == false ) {
+		this->decode(curr_tick, this->fetchToDecode);
+		this->decodeToExecute = this->fetchToDecode;
 
 	/* FETCH */
-	if( curr_tick == this->next_tick_fetch ) {
 		instruction *f;
 		this->next_tick_fetch = this->fetch(curr_tick,
 				curr_pc, &f);
 		this->fetchToDecode = (f == NULL ? &staticNOP : f);
-	}
+
 		this->cpu_state->pc += 4;
+
+	} else
+		this->decodeToExecute = &staticNOP;
+
 	cout << "Fetch:   " << *this->fetchToDecode << endl;
 
-	/* check nearest clock tick */
-	ti = this->next_tick_commit;
-	if( this->next_tick_mem < ti )
-		ti = this->next_tick_mem;
-	if( this->next_tick_execute < ti )
-		ti = this->next_tick_execute;
-	if( this->next_tick_decode < ti )
-		ti = this->next_tick_decode;
-	if( this->next_tick_fetch < ti )
-		ti = this->next_tick_fetch;
-
-	return ti;
+	return curr_tick + this->latency;
 }
