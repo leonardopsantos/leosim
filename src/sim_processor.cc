@@ -17,7 +17,6 @@ int sim_processor::clock_tick(unsigned long int curr_tick)
 {
 	unsigned long int next_tick;
 	next_tick = this->pipeline.clock_tick(curr_tick);
-	this->state.pc += sizeof(unsigned long int);
 	return next_tick;
 }
 

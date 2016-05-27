@@ -169,6 +169,7 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick) {
 				curr_pc, &f);
 		this->fetchToDecode = (f == NULL ? &staticNOP : f);
 	}
+		this->cpu_state->pc += 4;
 	cout << "Fetch:   " << *this->fetchToDecode << endl;
 
 	/* check nearest clock tick */
