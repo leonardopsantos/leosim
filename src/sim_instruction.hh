@@ -51,6 +51,8 @@ public:
 	friend ostream& operator<<(ostream& os, const instruction& inst);
 	virtual void print(ostream& where) const;
 
+	bool depends(instruction *b);
+
 public:
 	int num_sources;
 	instSources sourcesTypes[4];

@@ -464,6 +464,16 @@ void instructionEND::commit()
 	throw exception_simulator_stop();
 }
 
+bool instruction::depends(instruction* b)
+{
+	for(int i = 0; i < this->num_sources; i++) {
+		if( this->sourcesTypes[i] == instSources::REGISTER && b->destsTypes[0] == instDest::REGISTER &&
+				this->sources_idx[i] == b->dests_idx[0] )
+			return true;
+	}
+	return false;
+}
+
 instruction* instructionFactory::buildInstruction(unsigned long int addr, string line) {
 
 	instruction *new_inst = NULL;
