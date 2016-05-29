@@ -33,11 +33,13 @@ enum class instDest {
 
 enum class instClasses {
 	Invalid,
-	ADD,
+	First = 1,
+	NOP = First,
+	ARITH,
 	MUL,
 	MOV,
-	LDR,
-	STR,
+	MEM,
+	CTRL,
 	maxInstClasses
 };
 
@@ -47,6 +49,7 @@ public:
 	~instruction();
 	virtual void execute();
 	virtual void commit();
+	virtual void update_stats();
 
 	friend ostream& operator<<(ostream& os, const instruction& inst);
 	virtual void print(ostream& where) const;
@@ -54,6 +57,7 @@ public:
 	bool depends(instruction *b);
 
 public:
+	instClasses inst_class;
 	int num_sources;
 	instSources sourcesTypes[4];
 	long int sources_idx[4];
@@ -73,8 +77,33 @@ public:
 	void print(ostream& where) const;
 };
 
+class instructionClassARITH:public instruction {
+public:
+	instructionClassARITH();
+};
 
-class instructionADD:public instruction {
+class instructionClassMULT:public instruction {
+public:
+	instructionClassMULT();
+};
+
+class instructionClassMOV:public instruction {
+public:
+	instructionClassMOV();
+};
+
+class instructionClassMEM:public instruction {
+public:
+	instructionClassMEM();
+};
+
+
+class instructionClassCTRL:public instruction {
+public:
+	instructionClassCTRL();
+};
+
+class instructionADD:public instructionClassARITH {
 public:
 	instructionADD();
 	instructionADD(unsigned long int addr, long int s1, long int s2, long int d);
@@ -89,7 +118,7 @@ public:
 	void print(ostream& where) const;
 };
 
-class instructionSUB: public instruction {
+class instructionSUB: public instructionClassARITH {
 public:
 	instructionSUB();
 	instructionSUB(unsigned long int addr, long int s1, long int s2, long int d);
@@ -103,21 +132,21 @@ public:
 	void print(ostream& where) const;
 };
 
-class instructionMUL: public instruction {
+class instructionMUL: public instructionClassMULT {
 public:
 	instructionMUL();
 	instructionMUL(unsigned long int addr, long int s1, long int s2, long int d);
 	void print(ostream& where) const;
 };
 
-class instructionMLA: public instruction {
+class instructionMLA: public instructionClassMULT {
 public:
 	instructionMLA();
 	instructionMLA(unsigned long int addr, long int s1, long int s2, long int s3, long int d);
 	void print(ostream& where) const;
 };
 
-class instructionMOV:public instruction {
+class instructionMOV:public instructionClassMOV {
 public:
 	instructionMOV();
 	instructionMOV(unsigned long int addr, long int s1, long int d);
@@ -133,7 +162,7 @@ public:
 	void print(ostream& where) const;
 };
 
-class instructionLDR:public instruction {
+class instructionLDR:public instructionClassMEM {
 public:
 	instructionLDR();
 	instructionLDR(unsigned long int addr, long int s1, long int d);
@@ -150,7 +179,7 @@ enum class ldrIndexing {
 	indexing_Max,
 };
 
-class instructionLDROff:public instruction {
+class instructionLDROff:public instructionClassMEM {
 public:
 	instructionLDROff();
 	instructionLDROff(unsigned long int addr, long int s1, long int imm, long int d);
@@ -172,7 +201,7 @@ public:
 	void print(ostream& where) const;
 };
 
-class instructionSTR:public instruction {
+class instructionSTR:public instructionClassMEM {
 public:
 	instructionSTR();
 	instructionSTR(unsigned long int addr, long int s1, long int d);
@@ -181,7 +210,7 @@ public:
 	ldrIndexing indexing;
 };
 
-class instructionSTROff:public instruction {
+class instructionSTROff:public instructionClassMEM {
 public:
 	instructionSTROff();
 	instructionSTROff(unsigned long int addr, long int s1, long int imm, long int d);
@@ -203,7 +232,7 @@ public:
 	void print(ostream& where) const;
 };
 
-class instructionBR:public instruction {
+class instructionBR:public instructionClassCTRL {
 public:
 	instructionBR();
 	instructionBR(unsigned long int addr, string mem_tag);
@@ -219,7 +248,7 @@ public:
 	void print(ostream& where) const;
 };
 
-class instructionBRX:public instruction {
+class instructionBRX:public instructionClassCTRL {
 public:
 	instructionBRX();
 	instructionBRX(unsigned long int addr, long int s1);

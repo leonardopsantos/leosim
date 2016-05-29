@@ -5,11 +5,13 @@
  *      Author: lsantos
  */
 
-#include "sim_instruction.hh"
-
-#include "sim.hh"
-
 #include <cstdlib>
+
+#include "sim_instruction.hh"
+#include "sim.hh"
+#include "sim_stats.hh"
+
+extern sim_stats simulator_stats;
 
 instruction::instruction() {
 
@@ -44,11 +46,29 @@ void instruction::print(ostream& where) const {
 	where << "meh!";
 }
 
+void instruction::update_stats()
+{
+	simulator_stats.instructions_total++;
+	simulator_stats.instructions_by_type[static_cast< std::size_t >( this->inst_class )]++;
+}
+
+bool instruction::depends(instruction* b)
+{
+	for(int i = 0; i < this->num_sources; i++) {
+		if( this->sourcesTypes[i] == instSources::REGISTER && b->destsTypes[0] == instDest::REGISTER &&
+				this->sources_idx[i] == b->dests_idx[0] )
+			return true;
+	}
+	return false;
+}
+
 instructionNOP::instructionNOP() {
+	this->inst_class = instClasses::NOP;
 }
 
 instructionNOP::instructionNOP(unsigned long int addr)
 {
+	this->inst_class = instClasses::NOP;
 	this->memory_pos = addr;
 }
 
@@ -59,10 +79,35 @@ void instructionNOP::print(ostream& where) const {
 	where << this->memory_pos << " : NOP";
 }
 
-instructionADD::instructionADD() {
+instructionClassARITH::instructionClassARITH()
+{
+	this->inst_class = instClasses::ARITH;
 }
 
-instructionADD::instructionADD(unsigned long int addr, long int s1, long int s2, long int d)
+instructionClassMULT::instructionClassMULT()
+{
+	this->inst_class = instClasses::MUL;
+}
+
+instructionClassMOV::instructionClassMOV()
+{
+	this->inst_class = instClasses::MOV;
+}
+
+instructionClassMEM::instructionClassMEM()
+{
+	this->inst_class = instClasses::MEM;
+}
+
+instructionClassCTRL::instructionClassCTRL()
+{
+	this->inst_class = instClasses::CTRL;
+}
+
+instructionADD::instructionADD():instructionClassARITH() {
+}
+
+instructionADD::instructionADD(unsigned long int addr, long int s1, long int s2, long int d):instructionClassARITH()
 {
 	this->num_sources = 2;
 	this->num_dests = 1;
@@ -85,11 +130,11 @@ void instructionADD::print(ostream& where) const {
 	where << this->memory_pos << " : ADD r" << this->dests_idx[0] << ", r" << this->sources_idx[0] << ", r" << this->sources_idx[1];
 }
 
-instructionADDImm::instructionADDImm() {
-}
+instructionADDImm::instructionADDImm():instructionADD()
+{}
 
 instructionADDImm::instructionADDImm(unsigned long int addr, long int s1, long int imm,
-		long int d) {
+		long int d):instructionADD() {
 	this->num_sources = 2;
 	this->num_dests = 1;
 
@@ -108,10 +153,12 @@ void instructionADDImm::print(ostream& where) const {
 }
 
 instructionSUB::instructionSUB() {
+	this->inst_class = instClasses::ARITH;
 }
 
 instructionSUB::instructionSUB(unsigned long int addr, long int s1, long int s2, long int d)
 {
+	this->inst_class = instClasses::ARITH;
 	this->num_sources = 2;
 	this->num_dests = 1;
 
@@ -130,10 +177,12 @@ void instructionSUB::print(ostream& where) const {
 }
 
 instructionSUBImm::instructionSUBImm() {
+	this->inst_class = instClasses::ARITH;
 }
 
 instructionSUBImm::instructionSUBImm(unsigned long int addr, long int s1, long int imm,
 		long int d) {
+	this->inst_class = instClasses::ARITH;
 	this->num_sources = 2;
 	this->num_dests = 1;
 
@@ -151,10 +200,15 @@ void instructionSUBImm::print(ostream& where) const {
 	where << "SUBImm r" << this->dests_idx[0] << ", r" << this->sources_idx[0] << ", #" << this->sources_values[1];
 }
 
-instructionMUL::instructionMUL() {
+instructionMUL::instructionMUL():instructionClassMULT()
+{
+	this->inst_class = instClasses::MUL;
 }
 
-instructionMUL::instructionMUL(unsigned long int addr, long int s1, long int s2, long int d) {
+instructionMUL::instructionMUL(unsigned long int addr, long int s1, long int s2, long int d):
+		instructionClassMULT()
+{
+	this->inst_class = instClasses::MUL;
 	this->num_sources = 2;
 	this->num_dests = 1;
 
@@ -172,10 +226,13 @@ void instructionMUL::print(ostream& where) const {
 	where << "MUL r" << this->dests_idx[0] << ", r" << this->sources_idx[0] << ", r" << this->sources_idx[1];
 }
 
-instructionMLA::instructionMLA() {
-}
+instructionMLA::instructionMLA():instructionClassMULT()
+{}
 
-instructionMLA::instructionMLA(unsigned long int addr, long int s1, long int s2, long int s3, long int d) {
+instructionMLA::instructionMLA(unsigned long int addr, long int s1, long int s2, long int s3, long int d):
+		instructionClassMULT()
+{
+	this->inst_class = instClasses::MUL;
 	this->num_sources = 3;
 	this->num_dests = 1;
 
@@ -198,10 +255,12 @@ void instructionMLA::print(ostream& where) const {
 				<< ", r" << this->sources_idx[2];
 }
 
-instructionMOV::instructionMOV() {
-}
+instructionMOV::instructionMOV():instructionClassMOV()
+{}
 
-instructionMOV::instructionMOV(unsigned long int addr, long int s1, long int d) {
+instructionMOV::instructionMOV(unsigned long int addr, long int s1, long int d):
+		instructionClassMOV()
+{
 	this->num_sources = 1;
 	this->num_dests = 1;
 
@@ -222,10 +281,12 @@ void instructionMOV::print(ostream& where) const {
 	where << this->memory_pos << " : MOV r" << this->dests_idx[0] << ", r" << this->sources_idx[0];
 }
 
-instructionMOVImm::instructionMOVImm()
+instructionMOVImm::instructionMOVImm():instructionMOV()
 {}
 
-instructionMOVImm::instructionMOVImm(unsigned long int addr, long int imm, long int d) {
+instructionMOVImm::instructionMOVImm(unsigned long int addr, long int imm, long int d):
+		instructionMOV()
+{
 	this->num_sources = 1;
 	this->num_dests = 1;
 
@@ -246,11 +307,12 @@ void instructionMOVImm::print(ostream& where) const {
 	where << this->memory_pos << " : MOVImm r" << this->dests_idx[0] << ", #" << this->sources_values[0];
 }
 
-instructionLDR::instructionLDR()
+instructionLDR::instructionLDR():instructionClassMEM()
 {
 }
 
-instructionLDR::instructionLDR(unsigned long int addr, long int s1, long int d)
+instructionLDR::instructionLDR(unsigned long int addr, long int s1, long int d):
+		instructionClassMEM()
 {
 	this->num_sources = 1;
 	this->num_dests = 1;
@@ -274,11 +336,13 @@ void instructionLDR::print(ostream& where) const {
 	where << "LDR r" << this->dests_idx[0] << ", [r" << this->sources_idx[0] << "]";
 }
 
-instructionLDROff::instructionLDROff() {
+instructionLDROff::instructionLDROff():instructionClassMEM()
+{
 	this->indexing = ldrIndexing::indexing_OFFSET;
 }
 
-instructionLDROff::instructionLDROff(unsigned long int addr, long int s1, long int imm, long int d)
+instructionLDROff::instructionLDROff(unsigned long int addr, long int s1, long int imm, long int d):
+		instructionClassMEM()
 {
 	this->num_sources = 2;
 	this->num_dests = 1;
@@ -300,7 +364,8 @@ void instructionLDROff::print(ostream& where) const {
 	where << "LDRoff r" << this->dests_idx[0] << ", [r" << this->sources_idx[0] << ", #" << this->sources_values[1] << "]";
 }
 
-instructionLDRPre::instructionLDRPre() {
+instructionLDRPre::instructionLDRPre():instructionLDROff()
+{
 	this->indexing = ldrIndexing::indexing_PRE;
 }
 
@@ -313,12 +378,14 @@ void instructionLDRPre::print(ostream& where) const {
 	where << "LDRpre r" << this->dests_idx[0] << ", [r" << this->sources_idx[0] << ", #" << this->sources_values[1] << "] !";
 }
 
-instructionLDRPost::instructionLDRPost() {
+instructionLDRPost::instructionLDRPost():instructionLDROff()
+{
 	this->indexing = ldrIndexing::indexing_POST;
 }
 
 instructionLDRPost::instructionLDRPost(unsigned long int addr, long int s1, long int imm, long int d)
-	:instructionLDROff(addr, s1, imm, d) {
+	:instructionLDROff(addr, s1, imm, d)
+{
 	this->indexing = ldrIndexing::indexing_POST;
 }
 
@@ -326,10 +393,12 @@ void instructionLDRPost::print(ostream& where) const {
 	where << "LDRpost r" << this->dests_idx[0] << ", [r" << this->sources_idx[0] << "], #" << this->sources_values[1];
 }
 
-instructionSTR::instructionSTR()
+instructionSTR::instructionSTR():instructionClassMEM()
 {}
 
-instructionSTR::instructionSTR(unsigned long int addr, long int s1, long int d) {
+instructionSTR::instructionSTR(unsigned long int addr, long int s1, long int d):
+		instructionClassMEM()
+{
 	this->num_sources = 2;
 	this->num_dests = 1;
 
@@ -352,11 +421,14 @@ void instructionSTR::print(ostream& where) const {
 	where << "STR r" << this->dests_idx[0] << ", [r" << this->sources_idx[0] << "]";
 }
 
-instructionSTROff::instructionSTROff() {
+instructionSTROff::instructionSTROff():instructionClassMEM()
+{
 	this->indexing = ldrIndexing::indexing_OFFSET;
 }
 
-instructionSTROff::instructionSTROff(unsigned long int addr, long int s1, long int imm, long int d) {
+instructionSTROff::instructionSTROff(unsigned long int addr, long int s1, long int imm, long int d):
+		instructionClassMEM()
+{
 	this->num_sources = 2;
 	this->num_dests = 1;
 
@@ -377,12 +449,14 @@ void instructionSTROff::print(ostream& where) const {
 	where << "STRoff r" << this->dests_idx[0] << ", [r" << this->sources_idx[0] << ", #" << this->sources_values[1] << "]";
 }
 
-instructionSTRPre::instructionSTRPre() {
+instructionSTRPre::instructionSTRPre():instructionSTROff()
+{
 	this->indexing = ldrIndexing::indexing_PRE;
 }
 
-instructionSTRPre::instructionSTRPre(unsigned long int addr, long int s1, long int imm, long int d)
-	:instructionSTROff(addr, s1, imm, d) {
+instructionSTRPre::instructionSTRPre(unsigned long int addr, long int s1, long int imm, long int d):
+	instructionSTROff(addr, s1, imm, d)
+{
 	this->indexing = ldrIndexing::indexing_PRE;
 }
 
@@ -390,12 +464,14 @@ void instructionSTRPre::print(ostream& where) const {
 	where << "STRpre r" << this->dests_idx[0] << ", [r" << this->sources_idx[0] << ", #" << this->sources_values[1] << "] !";
 }
 
-instructionSTRPost::instructionSTRPost() {
+instructionSTRPost::instructionSTRPost():instructionSTROff()
+{
 	this->indexing = ldrIndexing::indexing_POST;
 }
 
 instructionSTRPost::instructionSTRPost(unsigned long int addr, long int s1, long int imm, long int d)
-	:instructionSTROff(addr, s1, imm, d) {
+	:instructionSTROff(addr, s1, imm, d)
+{
 	this->indexing = ldrIndexing::indexing_POST;
 }
 
@@ -403,10 +479,11 @@ void instructionSTRPost::print(ostream& where) const {
 	where << "STRpost r" << this->dests_idx[0] << ", [r" << this->sources_idx[0] << "], #" << this->sources_values[1];
 }
 
-instructionBR::instructionBR() {
-}
+instructionBR::instructionBR():instructionClassCTRL()
+{}
 
-instructionBR::instructionBR(unsigned long int addr, string mem_tag) {
+instructionBR::instructionBR(unsigned long int addr, string mem_tag):instructionClassCTRL()
+{
 	this->tag = mem_tag;
 	this->memory_pos = addr;
 	this->dest = 0;
@@ -416,10 +493,12 @@ void instructionBR::print(ostream& where) const {
 	where << "B " << this->tag << " ( " << this->dest << " )";
 }
 
-instructionBRX::instructionBRX() {
-}
+instructionBRX::instructionBRX():instructionClassCTRL()
+{}
 
-instructionBRX::instructionBRX(unsigned long int addr, long int s1) {
+instructionBRX::instructionBRX(unsigned long int addr, long int s1):
+		instructionClassCTRL()
+{
 	this->num_sources = 1;
 	this->sourcesTypes[0] = instSources::REGISTER;
 	this->sources_idx[0] = s1;
@@ -430,8 +509,8 @@ void instructionBRX::print(ostream& where) const {
 	where << "BrX r" << this->sources_idx[0];
 }
 
-instructionBRLink::instructionBRLink() {
-}
+instructionBRLink::instructionBRLink():instructionBR()
+{}
 
 instructionBRLink::instructionBRLink(unsigned long int addr, string mem_tag):instructionBR(addr, mem_tag) {
 	this->tag = mem_tag;
@@ -441,8 +520,8 @@ void instructionBRLink::print(ostream& where) const {
 	where << "BLr " << this->tag;
 }
 
-instructionBLX::instructionBLX() {
-}
+instructionBLX::instructionBLX():instructionBRX()
+{}
 
 instructionBLX::instructionBLX(unsigned long int addr, long int s1): instructionBRX(addr, s1) {
 }
@@ -462,16 +541,6 @@ void instructionEND::print(ostream& where) const
 void instructionEND::commit()
 {
 	throw exception_simulator_stop();
-}
-
-bool instruction::depends(instruction* b)
-{
-	for(int i = 0; i < this->num_sources; i++) {
-		if( this->sourcesTypes[i] == instSources::REGISTER && b->destsTypes[0] == instDest::REGISTER &&
-				this->sources_idx[i] == b->dests_idx[0] )
-			return true;
-	}
-	return false;
 }
 
 instruction* instructionFactory::buildInstruction(unsigned long int addr, string line) {

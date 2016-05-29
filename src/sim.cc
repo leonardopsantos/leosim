@@ -9,6 +9,9 @@
 #include <fstream>
 
 #include "sim.hh"
+#include "sim_stats.hh"
+
+sim_stats simulator_stats;
 
 simulator::simulator():system()
 {
@@ -29,6 +32,8 @@ void simulator::run() {
 			system.run();
 
 	} catch (exception_simulator_stop &stp) {
-		cout << stp.what() << endl;
+//		cout << stp.what() << endl;
+		cout << simulator_stats << endl;
 	}
 }
+

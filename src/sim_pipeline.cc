@@ -11,6 +11,9 @@
 #include "sim_instruction.hh"
 #include "sim_system.hh"
 #include "sim_memory.hh"
+#include "sim_stats.hh"
+
+extern sim_stats simulator_stats;
 
 instructionNOP staticNOP;
 
@@ -142,6 +145,7 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick) {
 	/* COMMIT */
 	cout << "Commit:  " << *this->memoryToCommit << endl;
 	this->commit(curr_tick, this->memoryToCommit);
+	this->memoryToCommit->update_stats();
 	this->lastCommit = this->memoryToCommit;
 
 	/* MEMORY */
@@ -155,8 +159,9 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick) {
 	this->executeToMemory = this->decodeToExecute;
 
 	/* DECODE */
-	cout << "Decode:  " << *this->fetchToDecode << endl;
 	if( halt_pipeline == false ) {
+		cout << "Decode:  " << *this->fetchToDecode << endl;
+
 		this->decode(curr_tick, this->fetchToDecode);
 		this->decodeToExecute = this->fetchToDecode;
 
@@ -166,12 +171,18 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick) {
 				curr_pc, &f);
 		this->fetchToDecode = (f == NULL ? &staticNOP : f);
 
+		cout << "Fetch:   " << *this->fetchToDecode << endl;
+
 		this->cpu_state->pc += 4;
 
-	} else
+		simulator_stats.ticks_halted++;
+	} else {
+		cout << "Decode:  " << *this->fetchToDecode << " (held)" << endl;
+		cout << "Fetch:   " << *this->fetchToDecode << " (held)" << endl;
 		this->decodeToExecute = &staticNOP;
+	}
 
-	cout << "Fetch:   " << *this->fetchToDecode << endl;
+	simulator_stats.ticks_total++;
 
 	return curr_tick + this->latency;
 }
