@@ -15,6 +15,7 @@ extern sim_stats simulator_stats;
 
 instruction::instruction() {
 
+	this->inst_class = instClasses::Invalid;
 	this->num_sources = 0;
 	this->num_dests = 0;
 
@@ -25,6 +26,7 @@ instruction::instruction() {
 		this->dests_idx[i] = 0;
 	}
 	this->memory_pos = 0;
+	this->tag = "";
 }
 
 instruction::~instruction() {
@@ -152,7 +154,8 @@ void instructionADDImm::print(ostream& where) const {
 	where << "ADDImm r" << this->dests_idx[0] << ", r" << this->sources_idx[0] << ", #" << this->sources_values[1];
 }
 
-instructionSUB::instructionSUB() {
+instructionSUB::instructionSUB()
+{
 	this->inst_class = instClasses::ARITH;
 }
 
@@ -370,7 +373,8 @@ instructionLDRPre::instructionLDRPre():instructionLDROff()
 }
 
 instructionLDRPre::instructionLDRPre(unsigned long int addr, long int s1, long int imm, long int d)
-	:instructionLDROff(addr, s1, imm, d) {
+	:instructionLDROff(addr, s1, imm, d)
+{
 	this->indexing = ldrIndexing::indexing_PRE;
 }
 
@@ -412,7 +416,8 @@ instructionSTR::instructionSTR(unsigned long int addr, long int s1, long int d):
 	this->memory_pos = addr;
 }
 
-void instructionSTR::execute() {
+void instructionSTR::execute()
+{
 	this->dests_idx[0] = this->sources_values[1];
 	this->destination_values[0] = this->sources_values[0];
 }
@@ -484,13 +489,15 @@ instructionBR::instructionBR():instructionClassCTRL()
 
 instructionBR::instructionBR(unsigned long int addr, string mem_tag):instructionClassCTRL()
 {
+	this->num_sources = 1;
+	this->sourcesTypes[0] = instSources::IMMEDIATE;
+	this->destsTypes[0] = instDest::BRANCH;
 	this->tag = mem_tag;
 	this->memory_pos = addr;
-	this->dest = 0;
 }
 
 void instructionBR::print(ostream& where) const {
-	where << "B " << this->tag << " ( " << this->dest << " )";
+	where << "B " << this->tag << " ( " << this->tag << " )";
 }
 
 instructionBRX::instructionBRX():instructionClassCTRL()
@@ -503,6 +510,7 @@ instructionBRX::instructionBRX(unsigned long int addr, long int s1):
 	this->sourcesTypes[0] = instSources::REGISTER;
 	this->sources_idx[0] = s1;
 	this->memory_pos = addr;
+	this->destsTypes[0] = instDest::BRANCH;
 }
 
 void instructionBRX::print(ostream& where) const {

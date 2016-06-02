@@ -28,6 +28,7 @@ enum class instDest {
 	Invalid,
 	REGISTER,
 	MEMORY,
+	BRANCH,
 	maxInstDest
 };
 
@@ -67,6 +68,7 @@ public:
 	unsigned long int memory_pos;
 	long int sources_values[4];
 	long int destination_values[4];
+	string tag;
 };
 
 class instructionNOP:public instruction {
@@ -237,8 +239,6 @@ public:
 	instructionBR();
 	instructionBR(unsigned long int addr, string mem_tag);
 	void print(ostream& where) const;
-	string tag;
-	unsigned long int dest;
 };
 
 class instructionBRLink:public instructionBR {

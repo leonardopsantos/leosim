@@ -10,11 +10,15 @@
 sim_processor_state::sim_processor_state()
 {
 	this->pc = 0;
+	this->target_pc = 0;
+	this->branch = false;
 }
 
 sim_processor_state::sim_processor_state(unsigned long int pc)
 {
 	this->pc = pc;
+	this->target_pc = 0;
+	this->branch = false;
 }
 
 unsigned long int sim_processor_state::get_pc() {
@@ -23,4 +27,25 @@ unsigned long int sim_processor_state::get_pc() {
 
 void sim_processor_state::set_pc(unsigned long int new_pc) {
 	this->pc = new_pc;
+}
+
+void sim_processor_state::set_target_pc(unsigned long int new_pc)
+{
+	this->target_pc = target_pc;
+	this->branch = true;
+}
+
+void sim_processor_state::branch_clear()
+{
+	this->branch = false;
+}
+
+void sim_processor_state::update_pc()
+{
+	if( branch == true )
+		pc = target_pc;
+	else
+		pc += 4;
+
+	branch = false;
 }

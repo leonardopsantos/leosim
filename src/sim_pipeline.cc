@@ -75,6 +75,17 @@ unsigned long int sim_pipeline::decode(unsigned long int curr_tick, instruction 
 			throw "Invalid register source type!!";
 		}
 	}
+	if( inst->destsTypes[0] == instDest::BRANCH ) {
+		unsigned long int pc_target;
+
+		if( inst->sourcesTypes[0] == instSources::IMMEDIATE )
+			pc_target = this->cacheiL1If->get_label_address(inst->tag);
+		else if( inst->sourcesTypes[0] == instSources::REGISTER )
+			pc_target = inst->sources_values[0];
+
+		this->cpu_state->set_target_pc(pc_target);
+	}
+
 	return curr_tick+this->latency;
 }
 
@@ -132,7 +143,8 @@ unsigned long int sim_pipeline::commit(unsigned long int curr_tick, instruction 
 	return curr_tick+this->latency;
 }
 
-int sim_pipeline::clock_tick(unsigned long int curr_tick) {
+int sim_pipeline::clock_tick(unsigned long int curr_tick)
+{
 
 	unsigned long int curr_pc = this->cpu_state->get_pc();
 	bool halt_pipeline = false;
@@ -158,22 +170,27 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick) {
 	this->execute(curr_tick, this->decodeToExecute);
 	this->executeToMemory = this->decodeToExecute;
 
-	/* DECODE */
 	if( halt_pipeline == false ) {
+		/* DECODE */
 		cout << "Decode:  " << *this->fetchToDecode << endl;
 
 		this->decode(curr_tick, this->fetchToDecode);
 		this->decodeToExecute = this->fetchToDecode;
 
-	/* FETCH */
+		/* FETCH */
 		instruction *f;
-		this->next_tick_fetch = this->fetch(curr_tick,
-				curr_pc, &f);
+		if( this->cpu_state->branch == false ) {
+			this->next_tick_fetch = this->fetch(curr_tick,
+					curr_pc, &f);
+		} else {
+			f = NULL;
+		}
+
 		this->fetchToDecode = (f == NULL ? &staticNOP : f);
 
 		cout << "Fetch:   " << *this->fetchToDecode << endl;
 
-		this->cpu_state->pc += 4;
+		this->cpu_state->update_pc();
 
 		simulator_stats.ticks_halted++;
 	} else {

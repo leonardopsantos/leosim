@@ -14,9 +14,14 @@ public:
 	sim_processor_state(unsigned long int pc);
 	unsigned long int get_pc();
 	void set_pc(unsigned long int new_pc);
+	void set_target_pc(unsigned long int new_pc);
+	void branch_clear();
+	void update_pc();
 
 public:
 	unsigned long int pc;
+	unsigned long int target_pc;
+	bool branch;
 };
 
 #endif /* SRC_SIM_PROCESSOR_STATE_HH_ */
