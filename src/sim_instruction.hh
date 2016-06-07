@@ -29,6 +29,7 @@ enum class instDest {
 	REGISTER,
 	MEMORY,
 	BRANCH,
+	BRANCH_CONDITIONAL,
 	maxInstDest
 };
 
@@ -69,6 +70,7 @@ public:
 	long int sources_values[4];
 	long int destination_values[4];
 	string tag;
+	bool is_dud; /**< Instruction does nothing */
 };
 
 class instructionNOP:public instruction {
@@ -262,12 +264,62 @@ public:
 	void print(ostream& where) const;
 };
 
+class instructionBRConditional:public instructionClassCTRL {
+public:
+	instructionBRConditional();
+	instructionBRConditional(unsigned long int addr, unsigned long int reg1, unsigned long int reg2, bool condition, string mem_tag);
+	void print(ostream& where) const;
+
+public:
+	bool equal;
+};
+
+class instructionBRLConditional:public instructionBRConditional {
+public:
+	instructionBRLConditional();
+	instructionBRLConditional(unsigned long int addr, unsigned long int reg1, unsigned long int reg2, bool condition, string mem_tag);
+	void print(ostream& where) const;
+
+public:
+	bool equal;
+};
+
+class instructionBRImmCond:public instructionClassCTRL {
+public:
+	instructionBRImmCond();
+	instructionBRImmCond(unsigned long int addr, unsigned long int reg1, long int imm, bool condition, string mem_tag);
+	void print(ostream& where) const;
+
+public:
+	bool equal;
+};
+
+class instructionBRXConditional:public instructionClassCTRL {
+public:
+	instructionBRXConditional();
+	instructionBRXConditional(unsigned long int addr, unsigned long int reg1, unsigned long int reg2, bool condition, unsigned long int reg3);
+	void print(ostream& where) const;
+
+public:
+	bool equal;
+};
+
+class instructionBRXImmCond:public instructionClassCTRL {
+public:
+	instructionBRXImmCond();
+	instructionBRXImmCond(unsigned long int addr, unsigned long int reg1, long int imm, bool condition, unsigned long int reg3);
+	void print(ostream& where) const;
+
+public:
+	bool equal;
+};
 
 class instructionEND:public instruction {
 public:
 	instructionEND();
 	void print(ostream& where) const;
 	void commit();
+	void update_stats();
 };
 
 class instructionFactory {

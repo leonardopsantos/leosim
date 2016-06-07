@@ -6,6 +6,7 @@
  */
 
 #include <cstdlib>
+#include <regex>
 
 #include "sim_instruction.hh"
 #include "sim.hh"
@@ -27,6 +28,7 @@ instruction::instruction() {
 	}
 	this->memory_pos = 0;
 	this->tag = "";
+	this->is_dud = false;
 }
 
 instruction::~instruction() {
@@ -66,11 +68,12 @@ bool instruction::depends(instruction* b)
 
 instructionNOP::instructionNOP() {
 	this->inst_class = instClasses::NOP;
+	this->is_dud = true;
 }
 
-instructionNOP::instructionNOP(unsigned long int addr)
+instructionNOP::instructionNOP(unsigned long int addr):
+	instructionNOP()
 {
-	this->inst_class = instClasses::NOP;
 	this->memory_pos = addr;
 }
 
@@ -81,27 +84,27 @@ void instructionNOP::print(ostream& where) const {
 	where << this->memory_pos << " : NOP";
 }
 
-instructionClassARITH::instructionClassARITH()
+instructionClassARITH::instructionClassARITH():instruction()
 {
 	this->inst_class = instClasses::ARITH;
 }
 
-instructionClassMULT::instructionClassMULT()
+instructionClassMULT::instructionClassMULT():instruction()
 {
 	this->inst_class = instClasses::MUL;
 }
 
-instructionClassMOV::instructionClassMOV()
+instructionClassMOV::instructionClassMOV():instruction()
 {
 	this->inst_class = instClasses::MOV;
 }
 
-instructionClassMEM::instructionClassMEM()
+instructionClassMEM::instructionClassMEM():instruction()
 {
 	this->inst_class = instClasses::MEM;
 }
 
-instructionClassCTRL::instructionClassCTRL()
+instructionClassCTRL::instructionClassCTRL():instruction()
 {
 	this->inst_class = instClasses::CTRL;
 }
@@ -398,10 +401,12 @@ void instructionLDRPost::print(ostream& where) const {
 }
 
 instructionSTR::instructionSTR():instructionClassMEM()
-{}
+{
+	this->indexing = ldrIndexing::indexing_OFFSET;
+}
 
 instructionSTR::instructionSTR(unsigned long int addr, long int s1, long int d):
-		instructionClassMEM()
+		instructionSTR()
 {
 	this->num_sources = 2;
 	this->num_dests = 1;
@@ -538,6 +543,171 @@ void instructionBLX::print(ostream& where) const {
 	where << "BLX r" << this->sources_idx[0];
 }
 
+instructionBRConditional::instructionBRConditional():
+	instructionClassCTRL()
+{}
+
+instructionBRConditional::instructionBRConditional(unsigned long int addr,
+		unsigned long int reg1, unsigned long int reg2, bool condition,
+		string mem_tag):
+	instructionClassCTRL()
+{
+	this->num_sources = 2;
+	this->sourcesTypes[0] = instSources::REGISTER;
+	this->sourcesTypes[1] = instSources::REGISTER;
+	this->sources_idx[0] = reg1;
+	this->sources_idx[1] = reg2;
+	this->memory_pos = addr;
+	this->destsTypes[0] = instDest::BRANCH_CONDITIONAL;
+	this->tag = mem_tag;
+	this->equal = condition;
+}
+
+void instructionBRConditional::print(ostream& where) const
+{
+	if( this->equal == true )
+		where << "BEq";
+	else
+		where << "BNEq";
+	where << " r" << this->sources_idx[0];
+	where << ", r" << this->sources_idx[1];
+	where << ", " << this->tag;
+}
+
+instructionBRImmCond::instructionBRImmCond():
+	instructionClassCTRL()
+{}
+
+instructionBRImmCond::instructionBRImmCond(unsigned long int addr,
+		unsigned long int reg1, long int imm, bool condition,
+		string mem_tag):
+	instructionClassCTRL()
+{
+	this->num_sources = 2;
+	this->sourcesTypes[0] = instSources::REGISTER;
+	this->sourcesTypes[1] = instSources::IMMEDIATE;
+	this->sources_idx[0] = reg1;
+	this->sources_idx[1] = imm;
+	this->memory_pos = addr;
+	this->destsTypes[0] = instDest::BRANCH_CONDITIONAL;
+	this->tag = mem_tag;
+	this->equal = condition;
+}
+
+void instructionBRImmCond::print(ostream& where) const
+{
+	if( this->equal == true )
+		where << "BEq";
+	else
+		where << "BNEq";
+	where << " r" << this->sources_idx[0];
+	where << ", #" << this->sources_idx[1];
+	where << ", " << this->tag;
+}
+
+instructionBRXConditional::instructionBRXConditional():
+			instructionClassCTRL()
+{}
+
+instructionBRXConditional::instructionBRXConditional(unsigned long int addr,
+		unsigned long int reg1, unsigned long int reg2, bool condition,
+		unsigned long int reg3):
+	instructionClassCTRL()
+{
+	this->num_sources = 3;
+	this->sourcesTypes[0] = instSources::REGISTER;
+	this->sourcesTypes[1] = instSources::REGISTER;
+	this->sourcesTypes[2] = instSources::REGISTER;
+	this->sources_idx[0] = reg1;
+	this->sources_idx[1] = reg2;
+	this->sources_idx[2] = reg3;
+	this->memory_pos = addr;
+	this->destsTypes[0] = instDest::BRANCH_CONDITIONAL;
+	this->tag = "";
+	this->equal = condition;
+}
+
+void instructionBRXConditional::print(ostream& where) const
+{
+	if( this->equal == true )
+		where << "BXEq";
+	else
+		where << "BXNEq";
+	where << " r" << this->sources_idx[0];
+	where << ", r" << this->sources_idx[1];
+	where << ", r" << this->sources_idx[2];
+}
+
+instructionBRXImmCond::instructionBRXImmCond():
+	instructionClassCTRL()
+{
+	this->equal = false;
+}
+
+instructionBRXImmCond::instructionBRXImmCond(unsigned long int addr,
+		unsigned long int reg1, long int imm, bool condition,
+		unsigned long int reg3):
+	instructionClassCTRL()
+{
+	this->num_sources = 3;
+	this->sourcesTypes[0] = instSources::REGISTER;
+	this->sourcesTypes[1] = instSources::IMMEDIATE;
+	this->sourcesTypes[2] = instSources::REGISTER;
+	this->sources_idx[0] = reg1;
+	this->sources_idx[1] = imm;
+	this->sources_idx[2] = reg3;
+	this->memory_pos = addr;
+	this->destsTypes[0] = instDest::BRANCH_CONDITIONAL;
+	this->tag = "";
+	this->equal = condition;
+}
+
+void instructionBRXImmCond::print(ostream& where) const
+{
+	if( this->equal == true )
+		where << "BXEq";
+	else
+		where << "BXNEq";
+	where << " r" << this->sources_idx[0];
+	where << ", #" << this->sources_idx[1];
+	where << ", r" << this->sources_idx[2];
+}
+
+instructionBRLConditional::instructionBRLConditional()
+{
+}
+
+instructionBRLConditional::instructionBRLConditional(unsigned long int addr,
+		unsigned long int reg1, unsigned long int reg2, bool condition,
+		string mem_tag):
+	instructionBRConditional()
+{
+	this->num_sources = 2;
+	this->sourcesTypes[0] = instSources::REGISTER;
+	this->sourcesTypes[1] = instSources::REGISTER;
+	this->sources_idx[0] = reg1;
+	this->sources_idx[1] = reg2;
+	this->memory_pos = addr;
+	this->num_dests = 2;
+	this->destsTypes[0] = instDest::BRANCH_CONDITIONAL;
+	this->destsTypes[1] = instDest::REGISTER;
+	this->dests_idx[1] = 31;
+	this->destination_values[1] = addr+4;
+	this->tag = mem_tag;
+	this->equal = condition;
+}
+
+void instructionBRLConditional::print(ostream& where) const
+{
+	if( this->equal == true )
+		where << "BLEq";
+	else
+		where << "BLNEq";
+	where << " r" << this->sources_idx[0];
+	where << ", r" << this->sources_idx[1];
+	where << ", " << this->tag;
+}
+
 instructionEND::instructionEND()
 {}
 
@@ -550,6 +720,9 @@ void instructionEND::commit()
 {
 	throw exception_simulator_stop();
 }
+
+void instructionEND::update_stats()
+{}
 
 instruction* instructionFactory::buildInstruction(unsigned long int addr, string line) {
 
@@ -577,6 +750,11 @@ instruction* instructionFactory::buildInstruction(unsigned long int addr, string
 
 	regex branch_regex("^[ \t]*(b|bl)[ \t]*([0-9a-zA-Z]+)$", std::regex_constants::extended | std::regex_constants::icase);
 	regex branchx_regex("^[ \t]*(bx|blx)[ \t]*r([0-9]+)$", std::regex_constants::extended | std::regex_constants::icase);
+
+	regex brancheq_regex("^[ \t]*(beq|bleq|bneq|blneq)[ \t]*r([0-9]+),[ \t]*(r([0-9]+)|#(([-0-9])+|([-0]+x[0-9a-fA-F]+))),[ \t]*([0-9a-zA-Z]+)$",
+		std::regex_constants::extended | std::regex_constants::icase);
+	regex branchxeq_regex("^[ \t]*(bxeq|bxneq|blxeq|blxneq)[ \t]*r([0-9]+),[ \t]*(r([0-9]+)|#(([-0-9])+|([-0]+x[0-9a-fA-F]+))),[ \t]*r([0-9]+)$",
+		std::regex_constants::extended | std::regex_constants::icase);
 
 	if( regex_match(line, base_match, nop_regex) /*&& base_match.size() == 3 */ ) {
 		new_inst = new instructionNOP(addr);
@@ -658,8 +836,44 @@ instruction* instructionFactory::buildInstruction(unsigned long int addr, string
 			string s = base_match[2].str();
 			new_inst = new instructionBRLink(addr, s);
 		}
+	} else if (regex_match (line, base_match, brancheq_regex) && base_match.size() == 9 ) {
+
+		bool cond = false;
+
+		if( base_match[1].str().find("neq") == std::string::npos )
+			cond = true;
+
+		if( base_match[3].str()[0] == '#' ) {
+			long int xx = (base_match[5].str()[1] == 'x' || base_match[5].str()[2] == 'x' ? stol(base_match[5].str(), nullptr, 16) : stol(base_match[5].str()));
+			new_inst = new instructionBRImmCond(addr, stol(base_match[2].str()), xx, cond, base_match[8].str());
+		} else {
+			new_inst = new instructionBRConditional(addr, stol(base_match[2].str()), stol(base_match[4].str()), cond, base_match[8].str());
+		}
+
+	} else if (regex_match (line, base_match, branchxeq_regex) && base_match.size() == 9 ) {
+
+		cout << line << " : base_match.size() = " << base_match.size() << endl;
+		for (unsigned int i = 0; i < base_match.size(); ++i) {
+			cout << "base_match[" << i << "].str() = " << base_match[i].str() << endl;
+		}
+
+		bool cond = false;
+
+		if( base_match[1].str().find("neq") == std::string::npos )
+			cond = true;
+
+		if( base_match[3].str()[0] == '#' ) {
+			long int xx = (base_match[5].str()[1] == 'x' || base_match[5].str()[2] == 'x' ? stol(base_match[5].str(), nullptr, 16) : stol(base_match[5].str()));
+			new_inst = new instructionBRXImmCond(addr, stol(base_match[2].str()), xx, cond, stol(base_match[8].str()));
+		} else {
+			new_inst = new instructionBRXConditional(addr, stol(base_match[2].str()), stol(base_match[4].str()), cond, stol(base_match[8].str()));
+		}
 	} else if( regex_match(line, base_match, end_regex)) {
 		new_inst = new instructionEND();
 	}
+
+	if( new_inst != NULL )
+		cout << *new_inst << endl;
+
 	return new_inst;
 }

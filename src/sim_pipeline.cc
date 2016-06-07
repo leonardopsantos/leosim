@@ -16,6 +16,7 @@
 extern sim_stats simulator_stats;
 
 instructionNOP staticNOP;
+instructionEND staticEND;
 
 using namespace std;
 
@@ -75,7 +76,8 @@ unsigned long int sim_pipeline::decode(unsigned long int curr_tick, instruction 
 			throw "Invalid register source type!!";
 		}
 	}
-	if( inst->destsTypes[0] == instDest::BRANCH ) {
+	/* in the same cycle, conditional branches have precedence */
+	if( inst->destsTypes[0] == instDest::BRANCH && this->cpu_state->branch == false ) {
 		unsigned long int pc_target;
 
 		if( inst->sourcesTypes[0] == instSources::IMMEDIATE )
@@ -91,7 +93,21 @@ unsigned long int sim_pipeline::decode(unsigned long int curr_tick, instruction 
 
 unsigned long int sim_pipeline::execute(unsigned long int curr_tick, instruction *inst)
 {
+	/* Execute first so we can update flags */
 	inst->execute();
+
+	if( inst->destsTypes[0] == instDest::BRANCH_CONDITIONAL ) {
+		unsigned long int pc_target;
+
+		if( inst->sourcesTypes[0] == instSources::IMMEDIATE )
+			pc_target = this->cacheiL1If->get_label_address(inst->tag);
+		else if( inst->sourcesTypes[0] == instSources::REGISTER )
+			pc_target = inst->sources_values[0];
+
+		this->cpu_state->set_target_pc(pc_target);
+	}
+
+
 	return curr_tick+this->latency;
 }
 
@@ -156,37 +172,47 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick)
 
 	/* COMMIT */
 	cout << "Commit:  " << *this->memoryToCommit << endl;
-	this->commit(curr_tick, this->memoryToCommit);
+	if( this->memoryToCommit->is_dud == false )
+		this->commit(curr_tick, this->memoryToCommit);
 	this->memoryToCommit->update_stats();
 	this->lastCommit = this->memoryToCommit;
 
 	/* MEMORY */
 	cout << "Memory:  " << *this->executeToMemory << endl;
-	this->memory(curr_tick, this->executeToMemory);
+	if( this->executeToMemory->is_dud == false )
+		this->memory(curr_tick, this->executeToMemory);
 	this->memoryToCommit = this->executeToMemory;
 
 	/* EXECUTE */
 	cout << "Execute: " << *this->decodeToExecute << endl;
-	this->execute(curr_tick, this->decodeToExecute);
+	if( this->decodeToExecute->is_dud == false )
+		this->execute(curr_tick, this->decodeToExecute);
 	this->executeToMemory = this->decodeToExecute;
+
+	/* Executed a conditional branch that was taken,
+	 * need to invalidate the decode and fetch instructions */
+	if( this->cpu_state->branch == true ) {
+		this->fetchToDecode = &staticNOP;
+	}
 
 	if( halt_pipeline == false ) {
 		/* DECODE */
 		cout << "Decode:  " << *this->fetchToDecode << endl;
 
-		this->decode(curr_tick, this->fetchToDecode);
+		if( this->fetchToDecode->is_dud == false )
+			this->decode(curr_tick, this->fetchToDecode);
 		this->decodeToExecute = this->fetchToDecode;
 
 		/* FETCH */
 		instruction *f;
 		if( this->cpu_state->branch == false ) {
-			this->next_tick_fetch = this->fetch(curr_tick,
-					curr_pc, &f);
-		} else {
-			f = NULL;
-		}
 
-		this->fetchToDecode = (f == NULL ? &staticNOP : f);
+			this->next_tick_fetch = this->fetch(curr_tick,
+						curr_pc, &f);
+			/* A bad fetch ends the simulation */
+			this->fetchToDecode = (f == NULL ? &staticEND : f);
+		} else
+			this->fetchToDecode = &staticNOP;
 
 		cout << "Fetch:   " << *this->fetchToDecode << endl;
 
