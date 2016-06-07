@@ -10,6 +10,8 @@
 
 #include "sim.hh"
 
+int debug_level = 1;
+
 using namespace std;
 
 int usage( char *me )

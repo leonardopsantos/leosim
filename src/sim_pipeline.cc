@@ -13,6 +13,8 @@
 #include "sim_memory.hh"
 #include "sim_stats.hh"
 
+extern int debug_level;
+
 extern sim_stats simulator_stats;
 
 instructionNOP staticNOP;
@@ -171,20 +173,23 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick)
 		halt_pipeline = true;
 
 	/* COMMIT */
-	cout << "Commit:  " << *this->memoryToCommit << endl;
+	if( debug_level > 0 )
+		cout << "Commit:  " << *this->memoryToCommit << endl;
 	if( this->memoryToCommit->is_dud == false )
 		this->commit(curr_tick, this->memoryToCommit);
 	this->memoryToCommit->update_stats();
 	this->lastCommit = this->memoryToCommit;
 
 	/* MEMORY */
-	cout << "Memory:  " << *this->executeToMemory << endl;
+	if( debug_level > 0 )
+		cout << "Memory:  " << *this->executeToMemory << endl;
 	if( this->executeToMemory->is_dud == false )
 		this->memory(curr_tick, this->executeToMemory);
 	this->memoryToCommit = this->executeToMemory;
 
 	/* EXECUTE */
-	cout << "Execute: " << *this->decodeToExecute << endl;
+	if( debug_level > 0 )
+		cout << "Execute: " << *this->decodeToExecute << endl;
 	if( this->decodeToExecute->is_dud == false )
 		this->execute(curr_tick, this->decodeToExecute);
 	this->executeToMemory = this->decodeToExecute;
@@ -197,7 +202,8 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick)
 
 	if( halt_pipeline == false ) {
 		/* DECODE */
-		cout << "Decode:  " << *this->fetchToDecode << endl;
+		if( debug_level > 0 )
+			cout << "Decode:  " << *this->fetchToDecode << endl;
 
 		if( this->fetchToDecode->is_dud == false )
 			this->decode(curr_tick, this->fetchToDecode);
@@ -214,14 +220,17 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick)
 		} else
 			this->fetchToDecode = &staticNOP;
 
-		cout << "Fetch:   " << *this->fetchToDecode << endl;
+		if( debug_level > 0 )
+			cout << "Fetch:   " << *this->fetchToDecode << endl;
 
 		this->cpu_state->update_pc();
 
 		simulator_stats.ticks_halted++;
 	} else {
-		cout << "Decode:  " << *this->fetchToDecode << " (held)" << endl;
-		cout << "Fetch:   " << *this->fetchToDecode << " (held)" << endl;
+		if( debug_level > 0 ) {
+			cout << "Decode:  " << *this->fetchToDecode << " (held)" << endl;
+			cout << "Fetch:   " << *this->fetchToDecode << " (held)" << endl;
+		}
 		this->decodeToExecute = &staticNOP;
 	}
 
