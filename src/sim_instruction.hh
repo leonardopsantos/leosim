@@ -143,6 +143,13 @@ public:
 	void print(ostream& where) const;
 };
 
+class instructionMULImm: public instructionClassMULT {
+public:
+	instructionMULImm();
+	instructionMULImm(unsigned long int addr, long int s1, long int imm, long int d);
+	void print(ostream& where) const;
+};
+
 class instructionMLA: public instructionClassMULT {
 public:
 	instructionMLA();

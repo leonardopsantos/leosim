@@ -232,6 +232,32 @@ void instructionMUL::print(ostream& where) const {
 	where << "MUL r" << this->dests_idx[0] << ", r" << this->sources_idx[0] << ", r" << this->sources_idx[1];
 }
 
+instructionMULImm::instructionMULImm():instructionClassMULT()
+{}
+
+instructionMULImm::instructionMULImm(unsigned long int addr, long int s1,
+		long int imm, long int d):
+	instructionClassMULT()
+{
+	this->inst_class = instClasses::MUL;
+	this->num_sources = 2;
+	this->sourcesTypes[0] = instSources::REGISTER;
+	this->sourcesTypes[1] = instSources::IMMEDIATE;
+
+	this->num_dests = 1;
+	this->sources_idx[0] = s1;
+	this->sources_values[1] = imm;
+	this->destsTypes[0] = instDest::REGISTER;
+	this->dests_idx[0] = d;
+
+	this->memory_pos = addr;
+}
+
+void instructionMULImm::print(ostream& where) const
+{
+	where << "MUL r" << this->dests_idx[0] << ", r" << this->sources_idx[0] << ", #" << this->sources_values[1];
+}
+
 instructionMLA::instructionMLA():instructionClassMULT()
 {}
 
@@ -745,7 +771,7 @@ instruction* instructionFactory::buildInstruction(unsigned long int addr, string
 	regex addsub_regex("^[ \t]*(add|sub)[ \t]*r([0-9]+),[ \t]*r([0-9]+),[ \t]*r([0-9]+)[ \t]*$", std::regex_constants::extended | std::regex_constants::icase);
 	regex addimm_regex("^[ \t]*(add|sub)[ \t]*r([0-9]+),[ \t]*r([0-9]+),[ \t]*#(([0-9]+)|0x([0-9a-fA-F]+))[ \t]*$", std::regex_constants::extended | std::regex_constants::icase);
 
-	regex mul_regex("^[ \t]*mul[ \t]*r([0-9]+),[ \t]*r([0-9]+),[ \t]*r([0-9]+)[ \t]*$", std::regex_constants::extended | std::regex_constants::icase);
+	regex mul_regex("^[ \t]*mul[ \t]*r([0-9]+),[ \t]*r([0-9]+),[ \t]*(r([0-9]+)|#(([-0-9])+|([-0]+x[0-9a-fA-F]+)))[ \t]*$", std::regex_constants::extended | std::regex_constants::icase);
 	regex mla_regex("^[ \t]*mla[ \t]*r([0-9]+),[ \t]*r([0-9]+),[ \t]*r([0-9]+),[ \t]*r([0-9]+)[ \t]*$", std::regex_constants::extended | std::regex_constants::icase);
 
 	regex branch_regex("^[ \t]*(b|bl)[ \t]*([0-9a-zA-Z]+)$", std::regex_constants::extended | std::regex_constants::icase);
@@ -811,8 +837,20 @@ instruction* instructionFactory::buildInstruction(unsigned long int addr, string
 		} else {if( base_match[1].str() == "sub" )
 			new_inst = new instructionSUBImm(addr, stol(base_match[3].str()), xx, stol(base_match[4].str()));
 		}
-	} else if (regex_match (line, base_match, mul_regex) && base_match.size() == 4 ) {
-		new_inst = new instructionMUL(addr, stol(base_match[2].str()), stol(base_match[3].str()), stol(base_match[1].str()));
+	} else if (regex_match (line, base_match, mul_regex) /*&& base_match.size() == 8*/ ) {
+
+		cout << line << " : base_match.size() = " << base_match.size() << endl;
+		for (unsigned int i = 0; i < base_match.size(); ++i) {
+			cout << "base_match[" << i << "].str() = " << base_match[i].str() << endl;
+		}
+
+		char ch = base_match[3].str()[0];
+		if( (ch == 'r' || ch == 'R') && ch != '#' )
+			new_inst = new instructionMUL(addr, stol(base_match[2].str()), stol(base_match[4].str()), stol(base_match[1].str()));
+		else if( ch != 'r' && ch != 'R' && ch == '#' ) {
+			long int xx = (base_match[5].str()[1] == 'x' || base_match[5].str()[2] == 'x' ? stol(base_match[5].str(), nullptr, 16) : stol(base_match[5].str()));
+			new_inst = new instructionMULImm(addr, stol(base_match[2].str()), xx, stol(base_match[1].str()));
+		}
 	} else if (regex_match (line, base_match, mla_regex) && base_match.size() == 5 ) {
 		new_inst = new instructionMLA(addr, stol(base_match[2].str()),
 				stol(base_match[3].str()), stol(base_match[4].str()),
@@ -852,11 +890,6 @@ instruction* instructionFactory::buildInstruction(unsigned long int addr, string
 
 	} else if (regex_match (line, base_match, branchxeq_regex) && base_match.size() == 9 ) {
 
-		cout << line << " : base_match.size() = " << base_match.size() << endl;
-		for (unsigned int i = 0; i < base_match.size(); ++i) {
-			cout << "base_match[" << i << "].str() = " << base_match[i].str() << endl;
-		}
-
 		bool cond = false;
 
 		if( base_match[1].str().find("neq") == std::string::npos )
@@ -877,3 +910,4 @@ instruction* instructionFactory::buildInstruction(unsigned long int addr, string
 
 	return new_inst;
 }
+
