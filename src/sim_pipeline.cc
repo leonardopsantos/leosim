@@ -118,7 +118,7 @@ unsigned long int sim_pipeline::memory(unsigned long int curr_tick, instruction*
 	for(int i = 0; i < inst->num_sources; i++) {
 		switch(inst->sourcesTypes[i]) {
 		case instSources::MEMORY:
-			inst->sources_values[i] = this->system->l1dcache.get_content(inst->sources_idx[i]);
+			inst->destination_values[i] = this->system->l1dcache.get_content(inst->sources_idx[i]);
 			break;
 		case instSources::REGISTER:
 		case instSources::IMMEDIATE:
@@ -224,14 +224,13 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick)
 			cout << "Fetch:   " << *this->fetchToDecode << endl;
 
 		this->cpu_state->update_pc();
-
-		simulator_stats.ticks_halted++;
 	} else {
 		if( debug_level > 0 ) {
 			cout << "Decode:  " << *this->fetchToDecode << " (held)" << endl;
 			cout << "Fetch:   " << *this->fetchToDecode << " (held)" << endl;
 		}
 		this->decodeToExecute = &staticNOP;
+		simulator_stats.ticks_halted++;
 	}
 
 	simulator_stats.ticks_total++;

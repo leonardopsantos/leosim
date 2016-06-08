@@ -141,6 +141,7 @@ public:
 	instructionMUL();
 	instructionMUL(unsigned long int addr, long int s1, long int s2, long int d);
 	void print(ostream& where) const;
+	void execute();
 };
 
 class instructionMULImm: public instructionClassMULT {
@@ -148,6 +149,7 @@ public:
 	instructionMULImm();
 	instructionMULImm(unsigned long int addr, long int s1, long int imm, long int d);
 	void print(ostream& where) const;
+	void execute();
 };
 
 class instructionMLA: public instructionClassMULT {
@@ -155,6 +157,15 @@ public:
 	instructionMLA();
 	instructionMLA(unsigned long int addr, long int s1, long int s2, long int s3, long int d);
 	void print(ostream& where) const;
+	void execute();
+};
+
+class instructionMLAImm: public instructionMLA {
+public:
+	instructionMLAImm();
+	instructionMLAImm(unsigned long int addr, long int s1, long int s2, long int imm, long int d);
+	void print(ostream& where) const;
+	void execute();
 };
 
 class instructionMOV:public instructionClassMOV {
@@ -181,21 +192,12 @@ public:
 	void print(ostream& where) const;
 };
 
-enum class ldrIndexing {
-	indexing_INVALID = 0,
-	indexing_Min = 1,
-	indexing_OFFSET = indexing_Min,
-	indexing_POST,
-	indexing_PRE,
-	indexing_Max,
-};
-
 class instructionLDROff:public instructionClassMEM {
 public:
 	instructionLDROff();
 	instructionLDROff(unsigned long int addr, long int s1, long int imm, long int d);
 	void print(ostream& where) const;
-	ldrIndexing indexing;
+	void execute();
 };
 
 class instructionLDRPre:public instructionLDROff {
@@ -203,6 +205,7 @@ public:
 	instructionLDRPre();
 	instructionLDRPre(unsigned long int addr, long int s1, long int imm, long int d);
 	void print(ostream& where) const;
+	void execute();
 };
 
 class instructionLDRPost:public instructionLDROff {
@@ -210,6 +213,7 @@ public:
 	instructionLDRPost();
 	instructionLDRPost(unsigned long int addr, long int s1, long int imm, long int d);
 	void print(ostream& where) const;
+	void execute();
 };
 
 class instructionSTR:public instructionClassMEM {
@@ -218,7 +222,6 @@ public:
 	instructionSTR(unsigned long int addr, long int s1, long int d);
 	void print(ostream& where) const;
 	void execute();
-	ldrIndexing indexing;
 };
 
 class instructionSTROff:public instructionClassMEM {
@@ -226,7 +229,6 @@ public:
 	instructionSTROff();
 	instructionSTROff(unsigned long int addr, long int s1, long int imm, long int d);
 	void print(ostream& where) const;
-	ldrIndexing indexing;
 };
 
 class instructionSTRPre:public instructionSTROff {
