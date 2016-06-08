@@ -48,8 +48,15 @@ void sim_processor::print_register_bank()
 	for (int i = 0; i < (sizeof(register_bank)/sizeof(register_bank[0]))/2; ++i) {
 		cout << setw(4) << i;
 	}
+	cout << endl;
+	cout << "               ";
+	for (int i = (sizeof(register_bank)/sizeof(register_bank[0]))/2;
+			i < (sizeof(register_bank)/sizeof(register_bank[0])); ++i) {
+		cout << setw(4) << i;
+	}
 	cout << endl << endl;
-	cout << "            00 ";
+
+	cout << "          00   ";
 	for (int i = 0; i < (sizeof(register_bank)/sizeof(register_bank[0]))/2; ++i) {
 		cout << setw(4) << register_bank[i];
 	}
@@ -58,7 +65,7 @@ void sim_processor::print_register_bank()
 
 
 
-	cout << "            16 ";
+	cout << "          16   ";
 	for (int i = (sizeof(register_bank)/sizeof(register_bank[0]))/2;
 			i < (sizeof(register_bank)/sizeof(register_bank[0])); ++i) {
 		cout << setw(4) << register_bank[i];
