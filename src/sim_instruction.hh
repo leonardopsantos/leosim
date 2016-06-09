@@ -192,26 +192,42 @@ public:
 	void print(ostream& where) const;
 };
 
-class instructionLDROff:public instructionClassMEM {
+class instructionLDROffReg:public instructionClassMEM {
 public:
-	instructionLDROff();
-	instructionLDROff(unsigned long int addr, long int s1, long int imm, long int d);
+	instructionLDROffReg();
+	instructionLDROffReg(unsigned long int addr, long int s1, long int s2, long int d);
 	void print(ostream& where) const;
 	void execute();
 };
 
-class instructionLDRPre:public instructionLDROff {
+class instructionLDROffImm:public instructionClassMEM {
 public:
-	instructionLDRPre();
-	instructionLDRPre(unsigned long int addr, long int s1, long int imm, long int d);
+	instructionLDROffImm();
+	instructionLDROffImm(unsigned long int addr, long int s1, long int imm, long int d);
 	void print(ostream& where) const;
 	void execute();
 };
 
-class instructionLDRPost:public instructionLDROff {
+class instructionLDRPreImm:public instructionLDROffImm {
 public:
-	instructionLDRPost();
-	instructionLDRPost(unsigned long int addr, long int s1, long int imm, long int d);
+	instructionLDRPreImm();
+	instructionLDRPreImm(unsigned long int addr, long int s1, long int imm, long int d);
+	void print(ostream& where) const;
+	void execute();
+};
+
+class instructionLDRPostReg:public instructionLDROffReg {
+public:
+	instructionLDRPostReg();
+	instructionLDRPostReg(unsigned long int addr, long int s1, long int s2, long int d);
+	void print(ostream& where) const;
+	void execute();
+};
+
+class instructionLDRPostImm:public instructionLDROffImm {
+public:
+	instructionLDRPostImm();
+	instructionLDRPostImm(unsigned long int addr, long int s1, long int imm, long int d);
 	void print(ostream& where) const;
 	void execute();
 };

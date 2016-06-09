@@ -16,6 +16,7 @@
 //	ldr r5, [r1], #-0x0ff
 //	ldr r5, [r1], #-0x0FF
 //	ldr r5, [r1], #-7
+	ldr r5, [r1], r7
 	// register
 //	str r5, [r1]
 //	str	r7,	[r15]

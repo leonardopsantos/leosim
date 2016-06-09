@@ -409,10 +409,42 @@ void instructionLDR::print(ostream& where) const {
 	where << "LDR r" << this->dests_idx[0] << ", [r" << this->sources_idx[0] << "]";
 }
 
-instructionLDROff::instructionLDROff():instructionClassMEM()
+instructionLDROffReg::instructionLDROffReg():instructionClassMEM()
+{
+}
+
+instructionLDROffReg::instructionLDROffReg(unsigned long int addr, long int s1,
+		long int s2, long int d):
+	instructionClassMEM()
+{
+	this->num_sources = 3;
+	this->num_dests = 1;
+
+	this->sourcesTypes[1] = instSources::REGISTER;
+	this->sources_idx[1] = s1;
+	this->sourcesTypes[2] = instSources::REGISTER;
+	this->sources_idx[2] = s2;
+
+	this->sourcesTypes[0] = instSources::MEMORY;
+	this->destsTypes[0] = instDest::REGISTER;
+	this->dests_idx[0] = d;
+	this->memory_pos = addr;
+}
+
+void instructionLDROffReg::print(ostream& where) const
+{
+	where << "LDRoff r" << this->dests_idx[0] << ", [r" << this->sources_idx[1] << ", r" << this->sources_idx[2] << "]";
+}
+
+void instructionLDROffReg::execute()
+{
+	this->sources_idx[0] = this->sources_values[1]+this->sources_values[2];
+}
+
+instructionLDROffImm::instructionLDROffImm():instructionClassMEM()
 {}
 
-instructionLDROff::instructionLDROff(unsigned long int addr, long int s1, long int imm, long int d):
+instructionLDROffImm::instructionLDROffImm(unsigned long int addr, long int s1, long int imm, long int d):
 		instructionClassMEM()
 {
 	this->num_sources = 3;
@@ -430,20 +462,20 @@ instructionLDROff::instructionLDROff(unsigned long int addr, long int s1, long i
 	this->memory_pos = addr;
 }
 
-void instructionLDROff::print(ostream& where) const {
-	where << "LDRoff r" << this->dests_idx[0] << ", [r" << this->sources_idx[0] << ", #" << this->sources_values[1] << "]";
+void instructionLDROffImm::print(ostream& where) const {
+	where << "LDRoff r" << this->dests_idx[0] << ", [r" << this->sources_idx[1] << ", #" << this->sources_values[2] << "]";
 }
 
-void instructionLDROff::execute()
+void instructionLDROffImm::execute()
 {
 	this->sources_idx[0] = this->sources_values[1]+this->sources_values[2];
 }
 
-instructionLDRPre::instructionLDRPre():instructionLDROff()
+instructionLDRPreImm::instructionLDRPreImm():instructionLDROffImm()
 {}
 
-instructionLDRPre::instructionLDRPre(unsigned long int addr, long int s1, long int imm, long int d)
-	:instructionLDROff(addr, s1, imm, d)
+instructionLDRPreImm::instructionLDRPreImm(unsigned long int addr, long int s1, long int imm, long int d)
+	:instructionLDROffImm(addr, s1, imm, d)
 {
 	this->num_sources = 3;
 	this->num_dests = 2;
@@ -464,21 +496,61 @@ instructionLDRPre::instructionLDRPre(unsigned long int addr, long int s1, long i
 	this->memory_pos = addr;
 }
 
-void instructionLDRPre::print(ostream& where) const {
+void instructionLDRPreImm::print(ostream& where) const {
 	where << "LDRpre r" << this->dests_idx[0] << ", [r" << this->sources_idx[0] << ", #" << this->sources_values[1] << "] !";
 }
 
-void instructionLDRPre::execute()
+void instructionLDRPreImm::execute()
 {
 	this->sources_idx[0] = this->sources_values[1]+this->sources_values[2];
 	this->destination_values[1] = this->sources_idx[0];
 }
 
-instructionLDRPost::instructionLDRPost():instructionLDROff()
+instructionLDRPostReg::instructionLDRPostReg():instructionLDROffReg()
 {}
 
-instructionLDRPost::instructionLDRPost(unsigned long int addr, long int s1, long int imm, long int d)
-	:instructionLDROff(addr, s1, imm, d)
+instructionLDRPostReg::instructionLDRPostReg(unsigned long int addr,
+		long int s1, long int s2, long int d):
+	instructionLDROffReg()
+{
+	this->num_sources = 3;
+	this->num_dests = 2;
+
+	this->sourcesTypes[1] = instSources::REGISTER;
+	this->sources_idx[1] = s1;
+
+	this->sourcesTypes[2] = instSources::REGISTER;
+	this->sources_idx[2] = s2;
+
+	this->sourcesTypes[0] = instSources::MEMORY;
+
+	this->destsTypes[0] = instDest::REGISTER;
+	this->dests_idx[0] = d;
+
+	this->destsTypes[1] = instDest::REGISTER;
+	this->dests_idx[1] = s1;
+
+	this->memory_pos = addr;
+}
+
+void instructionLDRPostReg::print(ostream& where) const
+{
+	where << "LDRpost r" << this->dests_idx[0] <<
+			", [r" << this->sources_idx[1] << "], r" <<
+			this->sources_idx[2];
+}
+
+void instructionLDRPostReg::execute()
+{
+	this->sources_idx[0] = this->sources_values[1];
+	this->destination_values[1] = this->sources_values[1]+this->sources_values[2];
+}
+
+instructionLDRPostImm::instructionLDRPostImm():instructionLDROffImm()
+{}
+
+instructionLDRPostImm::instructionLDRPostImm(unsigned long int addr, long int s1, long int imm, long int d):
+	instructionLDROffImm(addr, s1, imm, d)
 {
 	this->num_sources = 3;
 	this->num_dests = 2;
@@ -500,11 +572,13 @@ instructionLDRPost::instructionLDRPost(unsigned long int addr, long int s1, long
 	this->memory_pos = addr;
 }
 
-void instructionLDRPost::print(ostream& where) const {
-	where << "LDRpost r" << this->dests_idx[0] << ", [r" << this->sources_idx[1] << "], #" << this->sources_values[2];
+void instructionLDRPostImm::print(ostream& where) const {
+	where << "LDRpost r" << this->dests_idx[0] <<
+			", [r" << this->sources_idx[1] <<
+			"], #" << this->sources_values[2];
 }
 
-void instructionLDRPost::execute()
+void instructionLDRPostImm::execute()
 {
 	this->sources_idx[0] = this->sources_values[1];
 	this->destination_values[1] = this->sources_values[1]+this->sources_values[2];
@@ -820,6 +894,11 @@ void instructionEND::commit()
 void instructionEND::update_stats()
 {}
 
+inline long int get_immediate(string str)
+{
+	return (str[1] == 'x' || str[2] == 'x' ? stol(str, nullptr, 16) : stol(str));
+}
+
 instruction* instructionFactory::buildInstruction(unsigned long int addr, string line) {
 
 	instruction *new_inst = NULL;
@@ -836,7 +915,7 @@ instruction* instructionFactory::buildInstruction(unsigned long int addr, string
 	regex ldr_reg_regex("^[ \t]*(ldr|str)[ \t]*r([0-9]+),[ \t]*\\[r([0-9]+)\][ \t]*$", std::regex_constants::extended | std::regex_constants::icase | std::regex_constants::icase);
 	regex ldr_off_regex("^[ \t]*(ldr|str)[ \t]*r([0-9]+),[ \t]*\\[r([0-9]+),[ \t]*#(([-0-9]+)|([-0]+x[0-9a-fA-F]+))\][ \t]*$", std::regex_constants::extended | std::regex_constants::icase);
 	regex ldr_pre_regex("^[ \t]*(ldr|str)[ \t]*r([0-9]+),[ \t]*\\[r([0-9]+),[ \t]*#(([-0-9]+)|([-0]+x[0-9a-fA-F]+))\]( !|!)[ \t]*$", std::regex_constants::extended | std::regex_constants::icase);
-	regex ldr_post_regex("^[ \t]*(ldr|str)[ \t]*r([0-9]+),[ \t]*\\[r([0-9]+)\],[ \t]*#(([-0-9]+)|([-0]+x[0-9a-fA-F]+))[ \t]*$", std::regex_constants::extended | std::regex_constants::icase);
+	regex ldr_post_regex("^[ \t]*(ldr|str)[ \t]*r([0-9]+),[ \t]*\\[r([0-9]+)\],[ \t]*(r([0-9]+)|#(([-0-9])+|([-0]+x[0-9a-fA-F]+)))[ \t]*$", std::regex_constants::extended | std::regex_constants::icase);
 
 	regex addsub_regex("^[ \t]*(add|sub)[ \t]*r([0-9]+),[ \t]*r([0-9]+),[ \t]*r([0-9]+)[ \t]*$", std::regex_constants::extended | std::regex_constants::icase);
 	regex addimm_regex("^[ \t]*(add|sub)[ \t]*r([0-9]+),[ \t]*r([0-9]+),[ \t]*#(([0-9]+)|0x([0-9a-fA-F]+))[ \t]*$", std::regex_constants::extended | std::regex_constants::icase);
@@ -874,7 +953,7 @@ instruction* instructionFactory::buildInstruction(unsigned long int addr, string
 		long int xx = (base_match[4].str()[1] == 'x' || base_match[4].str()[2] == 'x' ? stol(base_match[4].str(), nullptr, 16) : stol(base_match[4].str()));
 
 		if( base_match[1].str() == "ldr" ) {
-			new_inst = new instructionLDROff(addr, stol(base_match[3].str()), xx, stol(base_match[2].str()));
+			new_inst = new instructionLDROffImm(addr, stol(base_match[3].str()), xx, stol(base_match[2].str()));
 		} else if( base_match[1].str() == "str" ) {
 			new_inst = new instructionSTROff(addr, stol(base_match[3].str()), xx, stol(base_match[2].str()));
 		}
@@ -884,16 +963,34 @@ instruction* instructionFactory::buildInstruction(unsigned long int addr, string
 		long int xx = (base_match[4].str()[1] == 'x' || base_match[4].str()[2] == 'x' ? stol(base_match[4].str(), nullptr, 16) : stol(base_match[4].str()));
 
 		if( base_match[1].str() == "ldr" ) {
-			new_inst = new instructionLDRPre(addr, stol(base_match[3].str()), xx, stol(base_match[2].str()));
+			new_inst = new instructionLDRPreImm(addr, stol(base_match[3].str()), xx, stol(base_match[2].str()));
 		} else if( base_match[1].str() == "str" ) {
 			new_inst = new instructionSTRPre(addr, stol(base_match[3].str()), xx, stol(base_match[2].str()));
 		}
-	} else if(regex_match (line, base_match, ldr_post_regex) && base_match.size() == 7 ) {
-		long int xx = (base_match[4].str()[1] == 'x' || base_match[4].str()[2] == 'x' ? stol(base_match[4].str(), nullptr, 16) : stol(base_match[4].str()));
+	} else if(regex_match (line, base_match, ldr_post_regex) && base_match.size() == 9 ) {
+
+
+		cout << line << " : base_match.size() = " << base_match.size() << endl;
+		for (unsigned int i = 0; i < base_match.size(); ++i) {
+			cout << "base_match[" << i << "].str() = " << base_match[i].str() << endl;
+		}
+
+		char ch = base_match[4].str()[0];
+
 		if( base_match[1].str() == "ldr" ) {
-			new_inst = new instructionLDRPost(addr, stol(base_match[3].str()), xx, stol(base_match[2].str()));
+			if( (ch == 'r' || ch == 'R') && ch != '#' ) {
+				new_inst = new instructionLDRPostReg(addr, stol(base_match[3].str()), stol(base_match[5].str()), stol(base_match[2].str()));
+			} else if( ch != 'r' && ch != 'R' && ch == '#' ) {
+				long int xx = get_immediate(base_match[6].str());
+				new_inst = new instructionLDRPostImm(addr, stol(base_match[3].str()), xx, stol(base_match[2].str()));
+			}
 		} else if( base_match[1].str() == "str" ) {
-			new_inst = new instructionSTRPost(addr, stol(base_match[3].str()), xx, stol(base_match[2].str()));
+			if( (ch == 'r' || ch == 'R') && ch != '#' ) {
+				long int xx = get_immediate(base_match[6].str());
+				new_inst = new instructionSTRPost(addr, stol(base_match[3].str()), xx, stol(base_match[2].str()));
+			}/* else if( ch != 'r' && ch != 'R' && ch == '#' ) {
+				new_inst = new instructionLDRPostImm(addr, stol(base_match[3].str()), stol(base_match[5].str()), stol(base_match[2].str()));
+			}*/
 		}
 	} else if (regex_match (line, base_match, addsub_regex) && base_match.size() == 5 ) {
 		if( base_match[1].str() == "add" )
