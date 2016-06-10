@@ -56,6 +56,8 @@ public:
 	long int get_content(unsigned long int address);
 	void set_content(unsigned long int address, long int data);
 	virtual int fill(std::ifstream &infile);
+	virtual int fill(int *data, int size);
+	virtual int dump(int *data, int size);
 
 public:
 	std::map<unsigned long int, long int> content;

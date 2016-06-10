@@ -164,3 +164,25 @@ int cache_data::fill(std::ifstream& infile)
 {
 	return 0;
 }
+
+int cache_data::fill(int* data, int size)
+{
+	int *p = data;
+	int i;
+	for (i = 0; i < size; ++i) {
+		this->content[(long unsigned int)p] = data[i];
+		p++;
+	}
+	return i;
+}
+
+int cache_data::dump(int* data, int size)
+{
+	int *p = data;
+	int i;
+	for (i = 0; i < size; ++i) {
+		data[i] = this->content[(long unsigned int)p];
+		p++;
+	}
+	return i;
+}

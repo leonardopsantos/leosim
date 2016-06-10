@@ -10,6 +10,8 @@
 
 #include "sim.hh"
 
+#include "matrix.hh"
+
 int debug_level = 1;
 
 using namespace std;
@@ -21,6 +23,9 @@ int usage( char *me )
 	return 0;
 }
 
+
+
+#if 0
 int main ( int argc, char *argv[])
 {
 	if( argc < 2 ) {
@@ -41,3 +46,24 @@ int main ( int argc, char *argv[])
 
 	return 0;
 }
+#endif
+
+
+int main ()
+{
+	ifstream infile("apps/matrix.S");
+	if( infile.is_open() == false ) {
+		cout << "Whoa!! Can't open file " << "apps/matrix.S" <<
+				", cowardly giving up...\n";
+	}
+
+	simulator leosim;
+	if( leosim.setup(infile) < 0 ) {
+		cout << "Whoa!! Can't setup simulator! cowardly giving up...\n";
+	}
+
+	matrix_main(leosim);
+
+	return 0;
+}
+
