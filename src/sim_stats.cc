@@ -24,6 +24,10 @@ ostream& operator<<(ostream& os, const sim_stats& stats)
 	os << "  Ticks inserted due to data dependencies:  " << stats.ticks_halted << endl;
 	os << "  Total instructions commited :  " << stats.instructions_total << endl;
 
+	int useful_insts = 0, x;
+
+	x = static_cast< std::size_t >( instClasses::NOP );
+
 	for (unsigned int i = static_cast< std::size_t >( instClasses::First );
 			i < static_cast< std::size_t >( instClasses::maxInstClasses ); ++i) {
 
@@ -39,8 +43,13 @@ ostream& operator<<(ostream& os, const sim_stats& stats)
 	    	}
 		#undef PROCESS_VAL
 
+		if( i != x )
+			useful_insts++;
+
 	    os << "    Total " << s << " : " << stats.instructions_by_type[i] << endl;
 	}
+	os << "  CPI: " << (((float)stats.ticks_total/useful_insts)) << endl;
+	os << "  IPC: " << (((float)useful_insts/stats.ticks_total)) << endl;
 	os << "=========================================================" << endl;
 	return os;
 }
