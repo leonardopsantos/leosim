@@ -14,6 +14,8 @@
 
 extern sim_stats simulator_stats;
 
+extern int debug_level;
+
 instruction::instruction() {
 
 	this->inst_class = instClasses::Invalid;
@@ -1046,7 +1048,7 @@ instruction* instructionFactory::buildInstruction(unsigned long int addr, string
 		if( (ch == 'r' || ch == 'R') && ch != '#' )
 			new_inst = new instructionMUL(addr, stol(base_match[2].str()), stol(base_match[4].str()), stol(base_match[1].str()));
 		else if( ch != 'r' && ch != 'R' && ch == '#' ) {
-			long int xx = (base_match[5].str()[1] == 'x' || base_match[5].str()[2] == 'x' ? stol(base_match[5].str(), nullptr, 16) : stol(base_match[5].str()));
+			long int xx = get_immediate(base_match[5].str());
 			new_inst = new instructionMULImm(addr, stol(base_match[2].str()), xx, stol(base_match[1].str()));
 		}
 	} else if (regex_match (line, base_match, mla_regex) && base_match.size() == 9 ) {
@@ -1107,9 +1109,6 @@ instruction* instructionFactory::buildInstruction(unsigned long int addr, string
 	} else if( regex_match(line, base_match, end_regex)) {
 		new_inst = new instructionEND();
 	}
-
-	if( new_inst != NULL )
-		cout << *new_inst << endl;
 
 	return new_inst;
 }

@@ -12,7 +12,7 @@
 
 #include "matrix.hh"
 
-int debug_level = 1;
+int debug_level = 0;
 
 using namespace std;
 

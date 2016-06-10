@@ -15,6 +15,8 @@
 #include "sim_memory.hh"
 //#include "sim_system.hh"
 
+extern int debug_level;
+
 using namespace std;
 
 memory::memory(const memory& o)
@@ -96,7 +98,8 @@ int cache_instructions::fill(std::ifstream &infile)
 			if( new_inst != NULL ) {
 				content[curr_addr] = new_inst;
 				curr_addr += 4;
-//				cout << *new_inst << endl;
+				if( debug_level > 0 )
+					cout << *new_inst << endl;
 			} else {
 				cout << "NOT MATCHED!: " << line << endl;
 			}
@@ -108,15 +111,16 @@ int cache_instructions::fill(std::ifstream &infile)
 	for(map<unsigned long int, instruction*>::iterator iterator = content.begin();
 			iterator != content.end(); ++iterator) {
 
-		if (dynamic_cast<instructionBR*>(iterator->second) == NULL)
+		if (dynamic_cast<instructionBR*>(iterator->second) == NULL &&
+		    dynamic_cast<instructionBRConditionalClass*>(iterator->second) == NULL)
 			continue;
 
-		instructionBR* br = dynamic_cast<instructionBR*>(iterator->second);
+		instruction* inst = dynamic_cast<instruction*>(iterator->second);
 
-		if( labels.find(br->tag) == labels.end() ) {
-			cout << "BAD LABEL " << br->tag << " !!!!" << endl;
+		if( labels.find(inst->tag) == labels.end() ) {
+			cout << "BAD LABEL " << inst->tag << " !!!!" << endl;
 			cout << "Can't proceed! Fix you codez!!" << endl;
-			return -1;
+			throw "BAD LABEL";
 		}
 
 	}
@@ -178,11 +182,12 @@ int cache_data::fill(int* data, int size)
 
 int cache_data::dump(int* data, int size)
 {
-	int *p = data;
-	int i;
+	long unsigned int p = (long unsigned int) data;
+	int i, d;
 	for (i = 0; i < size; ++i) {
-		data[i] = this->content[(long unsigned int)p];
-		p++;
+		d = this->content[p];
+		data[i] = d;
+		p += sizeof(int);
 	}
 	return i;
 }
