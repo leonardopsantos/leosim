@@ -61,9 +61,15 @@ void instruction::update_stats()
 bool instruction::depends(instruction* b)
 {
 	for(int i = 0; i < this->num_sources; i++) {
-		if( this->sourcesTypes[i] == instSources::REGISTER && b->destsTypes[0] == instDest::REGISTER &&
-				this->sources_idx[i] == b->dests_idx[0] )
-			return true;
+		if( this->sourcesTypes[i] != instSources::REGISTER )
+			continue;
+		for(int j = 0; j < b->num_dests; j++) {
+			if( b->destsTypes[j] != instDest::REGISTER )
+				continue;
+			if( this->sources_idx[i] == b->dests_idx[j] )
+				return true;
+		}
+
 	}
 	return false;
 }
