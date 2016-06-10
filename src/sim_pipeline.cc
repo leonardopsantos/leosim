@@ -134,7 +134,7 @@ unsigned long int sim_pipeline::memory(unsigned long int curr_tick, instruction*
 	for(int i = 0; i < inst->num_dests; i++) {
 		switch(inst->destsTypes[i]) {
 		case instDest::MEMORY:
-			this->system->l1dcache.set_content(inst->sources_idx[i], inst->sources_values[i]);
+			this->system->l1dcache.set_content(inst->dests_idx[i], inst->destination_values[i]);
 			break;
 		case instDest::REGISTER:
 			break;

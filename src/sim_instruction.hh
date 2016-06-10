@@ -254,11 +254,12 @@ public:
 	void print(ostream& where) const;
 };
 
-class instructionSTRPost:public instructionSTROff {
+class instructionSTRPostImm:public instructionSTROff {
 public:
-	instructionSTRPost();
-	instructionSTRPost(unsigned long int addr, long int s1, long int imm, long int d);
+	instructionSTRPostImm();
+	instructionSTRPostImm(unsigned long int addr, long int s1, long int imm, long int d);
 	void print(ostream& where) const;
+	void execute();
 };
 
 class instructionBR:public instructionClassCTRL {
