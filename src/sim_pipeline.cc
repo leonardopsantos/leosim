@@ -99,16 +99,19 @@ unsigned long int sim_pipeline::execute(unsigned long int curr_tick, instruction
 	inst->execute();
 
 	if( inst->destsTypes[0] == instDest::BRANCH_CONDITIONAL ) {
+
+		instructionBRConditionalClass *i = dynamic_cast<instructionBRConditionalClass*>(inst);
+		if ( i == NULL ) throw "Bad dynamic_cast in pipeline!";
+
+		if( i->should_jump == false)
+			return curr_tick+this->latency;
+
 		unsigned long int pc_target;
 
-		if( inst->sourcesTypes[0] == instSources::IMMEDIATE )
-			pc_target = this->cacheiL1If->get_label_address(inst->tag);
-		else if( inst->sourcesTypes[0] == instSources::REGISTER )
-			pc_target = inst->sources_values[0];
+		pc_target = this->cacheiL1If->get_label_address(inst->tag);
 
 		this->cpu_state->set_target_pc(pc_target);
 	}
-
 
 	return curr_tick+this->latency;
 }

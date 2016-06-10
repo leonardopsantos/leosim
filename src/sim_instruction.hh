@@ -289,54 +289,49 @@ public:
 	void print(ostream& where) const;
 };
 
-class instructionBRConditional:public instructionClassCTRL {
+class instructionBRConditionalClass:public instructionClassCTRL {
+public:
+	instructionBRConditionalClass();
+
+public:
+	bool is_equal;
+	bool should_jump;
+};
+
+class instructionBRConditional:public instructionBRConditionalClass {
 public:
 	instructionBRConditional();
 	instructionBRConditional(unsigned long int addr, unsigned long int reg1, unsigned long int reg2, bool condition, string mem_tag);
 	void print(ostream& where) const;
-
-public:
-	bool equal;
+	void execute();
 };
 
-class instructionBRLConditional:public instructionBRConditional {
+class instructionBRLConditional:public instructionBRConditionalClass {
 public:
 	instructionBRLConditional();
 	instructionBRLConditional(unsigned long int addr, unsigned long int reg1, unsigned long int reg2, bool condition, string mem_tag);
 	void print(ostream& where) const;
-
-public:
-	bool equal;
 };
 
-class instructionBRImmCond:public instructionClassCTRL {
+class instructionBRImmCond:public instructionBRConditionalClass {
 public:
 	instructionBRImmCond();
 	instructionBRImmCond(unsigned long int addr, unsigned long int reg1, long int imm, bool condition, string mem_tag);
 	void print(ostream& where) const;
-
-public:
-	bool equal;
 };
 
-class instructionBRXConditional:public instructionClassCTRL {
+class instructionBRXConditional:public instructionBRConditionalClass {
 public:
 	instructionBRXConditional();
 	instructionBRXConditional(unsigned long int addr, unsigned long int reg1, unsigned long int reg2, bool condition, unsigned long int reg3);
 	void print(ostream& where) const;
-
-public:
-	bool equal;
 };
 
-class instructionBRXImmCond:public instructionClassCTRL {
+class instructionBRXImmCond:public instructionBRConditionalClass {
 public:
 	instructionBRXImmCond();
 	instructionBRXImmCond(unsigned long int addr, unsigned long int reg1, long int imm, bool condition, unsigned long int reg3);
 	void print(ostream& where) const;
-
-public:
-	bool equal;
 };
 
 class instructionEND:public instruction {

@@ -31,7 +31,7 @@ void sim_processor_state::set_pc(unsigned long int new_pc) {
 
 void sim_processor_state::set_target_pc(unsigned long int new_pc)
 {
-	this->target_pc = target_pc;
+	this->target_pc = new_pc;
 	this->branch = true;
 }
 
@@ -43,9 +43,9 @@ void sim_processor_state::branch_clear()
 void sim_processor_state::update_pc()
 {
 	if( branch == true )
-		pc = target_pc;
+		this->pc = this->target_pc;
 	else
-		pc += 4;
+		this->pc += 4;
 
 	branch = false;
 }

@@ -713,14 +713,20 @@ void instructionBLX::print(ostream& where) const {
 	where << "BLX r" << this->sources_idx[0];
 }
 
+instructionBRConditionalClass::instructionBRConditionalClass():instructionClassCTRL()
+{
+	this->is_equal = false;
+	this->should_jump = false;
+}
+
 instructionBRConditional::instructionBRConditional():
-	instructionClassCTRL()
+	instructionBRConditionalClass()
 {}
 
 instructionBRConditional::instructionBRConditional(unsigned long int addr,
 		unsigned long int reg1, unsigned long int reg2, bool condition,
 		string mem_tag):
-	instructionClassCTRL()
+	instructionBRConditionalClass()
 {
 	this->num_sources = 2;
 	this->sourcesTypes[0] = instSources::REGISTER;
@@ -730,12 +736,12 @@ instructionBRConditional::instructionBRConditional(unsigned long int addr,
 	this->memory_pos = addr;
 	this->destsTypes[0] = instDest::BRANCH_CONDITIONAL;
 	this->tag = mem_tag;
-	this->equal = condition;
+	this->is_equal = condition;
 }
 
 void instructionBRConditional::print(ostream& where) const
 {
-	if( this->equal == true )
+	if( this->is_equal == true )
 		where << "BEq";
 	else
 		where << "BNEq";
@@ -744,14 +750,26 @@ void instructionBRConditional::print(ostream& where) const
 	where << ", " << this->tag;
 }
 
+void instructionBRConditional::execute()
+{
+	if( this->is_equal == true &&
+	    this->sources_values[0] == this->sources_values[1] )
+		this->should_jump = true;
+	else if( this->is_equal == false &&
+	    this->sources_values[0] != this->sources_values[1] )
+		this->should_jump = true;
+	else
+		this->should_jump = false;
+}
+
 instructionBRImmCond::instructionBRImmCond():
-	instructionClassCTRL()
+	instructionBRConditionalClass()
 {}
 
 instructionBRImmCond::instructionBRImmCond(unsigned long int addr,
 		unsigned long int reg1, long int imm, bool condition,
 		string mem_tag):
-	instructionClassCTRL()
+	instructionBRConditionalClass()
 {
 	this->num_sources = 2;
 	this->sourcesTypes[0] = instSources::REGISTER;
@@ -761,12 +779,12 @@ instructionBRImmCond::instructionBRImmCond(unsigned long int addr,
 	this->memory_pos = addr;
 	this->destsTypes[0] = instDest::BRANCH_CONDITIONAL;
 	this->tag = mem_tag;
-	this->equal = condition;
+	this->is_equal = condition;
 }
 
 void instructionBRImmCond::print(ostream& where) const
 {
-	if( this->equal == true )
+	if( this->is_equal == true )
 		where << "BEq";
 	else
 		where << "BNEq";
@@ -776,13 +794,13 @@ void instructionBRImmCond::print(ostream& where) const
 }
 
 instructionBRXConditional::instructionBRXConditional():
-			instructionClassCTRL()
+	instructionBRConditionalClass()
 {}
 
 instructionBRXConditional::instructionBRXConditional(unsigned long int addr,
 		unsigned long int reg1, unsigned long int reg2, bool condition,
 		unsigned long int reg3):
-	instructionClassCTRL()
+	instructionBRConditionalClass()
 {
 	this->num_sources = 3;
 	this->sourcesTypes[0] = instSources::REGISTER;
@@ -794,12 +812,12 @@ instructionBRXConditional::instructionBRXConditional(unsigned long int addr,
 	this->memory_pos = addr;
 	this->destsTypes[0] = instDest::BRANCH_CONDITIONAL;
 	this->tag = "";
-	this->equal = condition;
+	this->is_equal = condition;
 }
 
 void instructionBRXConditional::print(ostream& where) const
 {
-	if( this->equal == true )
+	if( this->is_equal == true )
 		where << "BXEq";
 	else
 		where << "BXNEq";
@@ -809,15 +827,13 @@ void instructionBRXConditional::print(ostream& where) const
 }
 
 instructionBRXImmCond::instructionBRXImmCond():
-	instructionClassCTRL()
-{
-	this->equal = false;
-}
+	instructionBRConditionalClass()
+{}
 
 instructionBRXImmCond::instructionBRXImmCond(unsigned long int addr,
 		unsigned long int reg1, long int imm, bool condition,
 		unsigned long int reg3):
-	instructionClassCTRL()
+	instructionBRConditionalClass()
 {
 	this->num_sources = 3;
 	this->sourcesTypes[0] = instSources::REGISTER;
@@ -829,12 +845,12 @@ instructionBRXImmCond::instructionBRXImmCond(unsigned long int addr,
 	this->memory_pos = addr;
 	this->destsTypes[0] = instDest::BRANCH_CONDITIONAL;
 	this->tag = "";
-	this->equal = condition;
+	this->is_equal = condition;
 }
 
 void instructionBRXImmCond::print(ostream& where) const
 {
-	if( this->equal == true )
+	if( this->is_equal == true )
 		where << "BXEq";
 	else
 		where << "BXNEq";
@@ -844,13 +860,12 @@ void instructionBRXImmCond::print(ostream& where) const
 }
 
 instructionBRLConditional::instructionBRLConditional()
-{
-}
+{}
 
 instructionBRLConditional::instructionBRLConditional(unsigned long int addr,
 		unsigned long int reg1, unsigned long int reg2, bool condition,
 		string mem_tag):
-	instructionBRConditional()
+	instructionBRConditionalClass()
 {
 	this->num_sources = 2;
 	this->sourcesTypes[0] = instSources::REGISTER;
@@ -864,12 +879,12 @@ instructionBRLConditional::instructionBRLConditional(unsigned long int addr,
 	this->dests_idx[1] = 31;
 	this->destination_values[1] = addr+4;
 	this->tag = mem_tag;
-	this->equal = condition;
+	this->is_equal = condition;
 }
 
 void instructionBRLConditional::print(ostream& where) const
 {
-	if( this->equal == true )
+	if( this->is_equal == true )
 		where << "BLEq";
 	else
 		where << "BLNEq";
@@ -968,13 +983,6 @@ instruction* instructionFactory::buildInstruction(unsigned long int addr, string
 			new_inst = new instructionSTRPre(addr, stol(base_match[3].str()), xx, stol(base_match[2].str()));
 		}
 	} else if(regex_match (line, base_match, ldr_post_regex) && base_match.size() == 9 ) {
-
-
-		cout << line << " : base_match.size() = " << base_match.size() << endl;
-		for (unsigned int i = 0; i < base_match.size(); ++i) {
-			cout << "base_match[" << i << "].str() = " << base_match[i].str() << endl;
-		}
-
 		char ch = base_match[4].str()[0];
 
 		if( base_match[1].str() == "ldr" ) {
@@ -998,11 +1006,11 @@ instruction* instructionFactory::buildInstruction(unsigned long int addr, string
 		if( base_match[1].str() == "sub" )
 			new_inst = new instructionSUB(addr, stol(base_match[3].str()), stol(base_match[4].str()), stol(base_match[2].str()));
 	} else if (regex_match (line, base_match, addimm_regex) && base_match.size() == 7 ) {
-		long int xx = (base_match[4].str()[1] == 'x' ? stol(base_match[6].str(), nullptr, 16) : stol(base_match[4].str()));
+		long int xx = get_immediate(base_match[4].str());
 		if( base_match[1].str() == "add" ) {
-			new_inst = new instructionADDImm(addr, stol(base_match[3].str()), xx, stol(base_match[4].str()));
+			new_inst = new instructionADDImm(addr, stol(base_match[3].str()), xx, stol(base_match[2].str()));
 		} else {if( base_match[1].str() == "sub" )
-			new_inst = new instructionSUBImm(addr, stol(base_match[3].str()), xx, stol(base_match[4].str()));
+			new_inst = new instructionSUBImm(addr, stol(base_match[3].str()), xx, stol(base_match[2].str()));
 		}
 	} else if (regex_match (line, base_match, mul_regex) && base_match.size() == 8 ) {
 		char ch = base_match[3].str()[0];
@@ -1042,10 +1050,18 @@ instruction* instructionFactory::buildInstruction(unsigned long int addr, string
 		}
 	} else if (regex_match (line, base_match, brancheq_regex) && base_match.size() == 9 ) {
 
-		bool cond = false;
 
-		if( base_match[1].str().find("neq") == std::string::npos )
-			cond = true;
+		cout << line << " : base_match.size() = " << base_match.size() << endl;
+		for (unsigned int i = 0; i < base_match.size(); ++i) {
+			cout << "base_match[" << i << "].str() = " << base_match[i].str() << endl;
+		}
+
+
+
+		bool cond = true;
+
+		if( base_match[1].str().find("neq") != std::string::npos )
+			cond = false;
 
 		if( base_match[3].str()[0] == '#' ) {
 			long int xx = (base_match[5].str()[1] == 'x' || base_match[5].str()[2] == 'x' ? stol(base_match[5].str(), nullptr, 16) : stol(base_match[5].str()));
