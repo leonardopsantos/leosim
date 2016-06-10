@@ -1,6 +1,8 @@
 #include <iostream>
 #include <stdlib.h>     /* atoi */
 #include <string.h>     /* atoi */
+#include <stdio.h>
+
 
 #include "sim.hh"
 #include "matrix.hh"
@@ -11,27 +13,38 @@ Matrix::Matrix() {
 	this->rows = 0;
 	this->columns = 0;
 	this->data = NULL;
+	this->size = 0;
 }
 
 Matrix::Matrix( int size )
 {
 	this->rows = size;
 	this->columns = size;
-        int sz = size*size;
-	this->data = new int[sz];
+	this->size = size*size;
+	this->data = new int[this->size];
         int *p = this->data;
-        for(int i = 0; i < sz; i++)
+        for(int i = 0; i < this->size; i++)
             *p++ = rand();
 }
 
-Matrix::Matrix( int r, int c )
+Matrix::Matrix( int r, int c ):Matrix()
 {
 	this->rows = r;
 	this->columns = c;
-	this->data = new int[this->rows*this->columns];
+	this->size = this->rows*this->columns;
+	this->data = new int[this->size];
 }
 
-#if 1
+Matrix::~Matrix()
+{
+	if( this->size > 0 && this->data != NULL ) {
+		delete this->data;
+		this->data = NULL;
+		this->size = 0;
+	}
+}
+
+#if 0
 Matrix Matrix::operator *(const Matrix& b)
 {
 	Matrix res(this->rows, b.columns);
@@ -114,6 +127,27 @@ Matrix Matrix::operator *(const Matrix& b)
 }
 #endif
 
+bool Matrix::operator==(const Matrix& rhs)
+{
+	if( this->columns != rhs.columns || this->rows != rhs.rows )
+		return false;
+
+	int *P_lhs = this->data;
+	int *P_rhs = rhs.data;
+	int sz = rhs.rows*rhs.columns;
+	for (int i = 0; i < sz; ++i) {
+		if(*P_lhs++ != *P_rhs++ )
+			return false;
+	}
+
+	return true;
+}
+
+bool Matrix::operator !=(const Matrix& rhs)
+{
+	return !(*this == rhs);
+}
+
 ostream& operator<<(ostream& os, const Matrix& d)
 {
 	int rs, cs;
@@ -138,6 +172,8 @@ void matrix_main(simulator &leosim)
 	memcpy(Ma.data, da, Ma.columns*Ma.rows*sizeof(int));
 	memcpy(Mb.data, da, Mb.columns*Mb.rows*sizeof(int));
 
+	Matrix Mcheck = Ma*Mb;
+
 	cout << "Matriz A:\n" << Ma;
 	cout << "Matriz B:\n" << Mb;
 
@@ -155,16 +191,20 @@ void matrix_main(simulator &leosim)
 	leosim.system.cpu.register_bank[3] = Mb.columns;
 	leosim.system.cpu.register_bank[4] = Ma.columns;
 
-	leosim.system.l1dcache.fill(Ma.data, Ma.rows*Ma.columns*sizeof(Ma.data[0]));
-	leosim.system.l1dcache.fill(Mb.data, Mb.rows*Mb.columns*sizeof(Mb.data[0]));
+	leosim.system.l1dcache.fill(Ma.data, Ma.rows*Ma.columns);
+	leosim.system.l1dcache.fill(Mb.data, Mb.rows*Mb.columns);
 
-	memset(Mresult.data, '\0', Mresult.rows*Mresult.columns*sizeof(Mresult.data[0]));
+	memset(Mresult.data, '\0', Mresult.rows*Mresult.columns);
 
 	leosim.run();
 
-	leosim.system.l1dcache.dump(Mresult.data, Mresult.rows*Mresult.columns*sizeof(Mresult.data[0]));
+	leosim.system.l1dcache.dump(Mresult.data, Mresult.rows*Mresult.columns);
 
 	cout << "Matriz Mresult:\n" << Mresult;
-	Matrix Mcheck = Ma*Mb;
-	cout << "Matriz Mcheck:\n" << Mcheck;
+//	cout << "Matriz Mcheck:\n" << Mcheck;
+
+	if( Mresult == Mcheck )
+		cout << "MATCHES!! :-D" << endl;
+	else
+		cout << "DOES NOT MATCH!! :-(" << endl;
 }

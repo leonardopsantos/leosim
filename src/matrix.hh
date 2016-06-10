@@ -18,10 +18,14 @@ public:
 	int rows;
 	int columns;
 	int *data;
+	unsigned int size;
 	Matrix();
 	Matrix(int);
 	Matrix(int, int);
+	~Matrix();
 	Matrix operator*(const Matrix& b);
+	bool operator==(const Matrix& rhs);
+	bool operator!=(const Matrix& rhs);
 	friend std::ostream& operator<<(std::ostream& os, const Matrix& d);
 };
 
