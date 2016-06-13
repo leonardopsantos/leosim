@@ -13,6 +13,8 @@
 #include "sim_memory.hh"
 #include "sim_stats.hh"
 
+#include "sim_features.hh"
+
 extern int debug_level;
 
 extern sim_stats simulator_stats;
@@ -68,7 +70,14 @@ unsigned long int sim_pipeline::decode(unsigned long int curr_tick, instruction 
 	for(int i = 0; i < inst->num_sources; i++) {
 		switch(inst->sourcesTypes[i]) {
 		case instSources::REGISTER:
+			#ifdef SIMCPU_FEATURE_FORWARD
+			if( inst->sources_forward[i] == false ) {
+				inst->sources_values[i] = this->cpu->register_read(inst->sources_idx[i]);
+				inst->sources_forward[i] = false;
+			}
+			#else
 			inst->sources_values[i] = this->cpu->register_read(inst->sources_idx[i]);
+			#endif
 			break;
 		case instSources::IMMEDIATE:
 		case instSources::MEMORY:
@@ -164,44 +173,71 @@ unsigned long int sim_pipeline::commit(unsigned long int curr_tick, instruction 
 	return curr_tick+this->latency;
 }
 
+void sim_pipeline::forward_data(instruction *insta, instruction *instb)
+{
+	for(int i = 0; i < insta->num_sources; i++) {
+		if( insta->sourcesTypes[i] != instSources::REGISTER )
+			continue;
+		for(int j = 0; j < instb->num_dests; j++) {
+			if( instb->destsTypes[j] != instDest::REGISTER )
+				continue;
+
+			if( insta->sources_idx[i] == instb->dests_idx[j] &&
+					insta->sources_forward[i] == false) {
+				insta->sources_values[i] = instb->destination_values[j];
+				insta->sources_forward[i] = true;
+			}
+		}
+	}
+}
+
 int sim_pipeline::clock_tick(unsigned long int curr_tick)
 {
-
 	unsigned long int curr_pc = this->cpu_state->get_pc();
 	bool halt_pipeline = false;
 
+	#ifndef SIMCPU_FEATURE_FORWARD
 	if( this->fetchToDecode->depends(this->decodeToExecute) == true ||
 		this->fetchToDecode->depends(this->executeToMemory) == true ||
 		this->fetchToDecode->depends(this->memoryToCommit) == true )
 		halt_pipeline = true;
+	#endif
 
 	/* COMMIT */
 	if( debug_level > 0 )
 		cout << "Commit:  " << *this->memoryToCommit << endl;
 	if( this->memoryToCommit->is_dud == false )
 		this->commit(curr_tick, this->memoryToCommit);
-	this->memoryToCommit->update_stats();
-	this->lastCommit = this->memoryToCommit;
 
 	/* MEMORY */
 	if( debug_level > 0 )
 		cout << "Memory:  " << *this->executeToMemory << endl;
 	if( this->executeToMemory->is_dud == false )
 		this->memory(curr_tick, this->executeToMemory);
-	this->memoryToCommit = this->executeToMemory;
 
 	/* EXECUTE */
 	if( debug_level > 0 )
 		cout << "Execute: " << *this->decodeToExecute << endl;
+
+
+	#ifdef SIMCPU_FEATURE_FORWARD
+	this->decodeToExecute->forward_clear();
+	forward_data(this->decodeToExecute, this->executeToMemory);
+	forward_data(this->decodeToExecute, this->memoryToCommit);
+	#endif
 	if( this->decodeToExecute->is_dud == false )
 		this->execute(curr_tick, this->decodeToExecute);
-	this->executeToMemory = this->decodeToExecute;
 
 	/* Executed a conditional branch that was taken,
 	 * need to invalidate the decode and fetch instructions */
 	if( this->cpu_state->branch == true ) {
 		this->fetchToDecode = &staticNOP;
 	}
+
+	this->memoryToCommit->update_stats();
+	this->lastCommit = this->memoryToCommit;
+	this->memoryToCommit = this->executeToMemory;
+	this->executeToMemory = this->decodeToExecute;
 
 	if( halt_pipeline == false ) {
 		/* DECODE */

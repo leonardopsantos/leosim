@@ -27,6 +27,7 @@ instruction::instruction() {
 		this->sources_idx[i] = 0;
 		this->destsTypes[i] = instDest::Invalid;
 		this->dests_idx[i] = 0;
+		this->sources_forward[i] = false;
 	}
 	this->memory_pos = 0;
 	this->tag = "";
@@ -72,6 +73,13 @@ bool instruction::depends(instruction* b)
 
 	}
 	return false;
+}
+
+bool instruction::forward_clear()
+{
+	for (int i = 0; i < (sizeof(this->sources_forward)/sizeof(this->sources_forward[0])); ++i) {
+		this->sources_forward[i] = false;
+	}
 }
 
 instructionNOP::instructionNOP() {
@@ -1118,4 +1126,3 @@ instruction* instructionFactory::buildInstruction(unsigned long int addr, string
 
 	return new_inst;
 }
-

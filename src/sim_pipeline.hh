@@ -13,6 +13,8 @@
 #include "sim_instruction.hh"
 #include "sim_memory.hh"
 
+#include "sim_features.hh"
+
 class sim_system;
 class memory;
 class sim_processor;
@@ -30,6 +32,8 @@ public:
 	unsigned long int commit(unsigned long int curr_tick, instruction *inst);
 
 	friend ostream& operator<<(ostream& os, const sim_pipeline& pipe);
+
+	void forward_data(instruction *insta, instruction *instb);
 
 public:
 	sim_system *system;

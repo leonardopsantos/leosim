@@ -57,6 +57,7 @@ public:
 	virtual void print(ostream& where) const;
 
 	bool depends(instruction *b);
+	bool forward_clear();
 
 public:
 	instClasses inst_class;
@@ -68,6 +69,7 @@ public:
 	long int dests_idx[4];
 	unsigned long int memory_pos;
 	long int sources_values[4];
+	bool sources_forward[4];
 	long int destination_values[4];
 	string tag;
 	bool is_dud; /**< Instruction does nothing */
