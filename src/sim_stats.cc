@@ -44,7 +44,7 @@ ostream& operator<<(ostream& os, const sim_stats& stats)
 		#undef PROCESS_VAL
 
 		if( i != x )
-			useful_insts++;
+			useful_insts += stats.instructions_by_type[i];
 
 	    os << "    Total " << s << " : " << stats.instructions_by_type[i] << endl;
 	}
