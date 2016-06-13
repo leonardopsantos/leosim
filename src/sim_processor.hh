@@ -26,7 +26,9 @@ public:
 public:
 
 	long int register_bank[32];
+	long int register_bank_old[32];
 
+public:
 	sim_system *system;
 	sim_processor_state state;
 	sim_pipeline pipeline;
