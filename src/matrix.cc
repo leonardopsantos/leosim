@@ -7,6 +7,8 @@
 #include "sim.hh"
 #include "matrix.hh"
 
+extern int debug_level;
+
 using namespace std;
 
 Matrix::Matrix() {
@@ -174,8 +176,10 @@ void matrix_main(simulator &leosim)
 
 	Matrix Mcheck = Ma*Mb;
 
-	cout << "Matriz A:\n" << Ma;
-	cout << "Matriz B:\n" << Mb;
+	if( debug_level > 0 ) {
+		cout << "Matriz A:\n" << Ma;
+		cout << "Matriz B:\n" << Mb;
+	}
 
 	//	r0 = ponteiro para matriz A
 	//	r1 = ponteiro para matriz B
@@ -200,11 +204,13 @@ void matrix_main(simulator &leosim)
 
 	leosim.system.l1dcache.dump(Mresult.data, Mresult.rows*Mresult.columns);
 
-	cout << "Matriz Mresult:\n" << Mresult;
-//	cout << "Matriz Mcheck:\n" << Mcheck;
+	if( debug_level > 0 ) {
+		cout << "Matriz Mresult:\n" << Mresult;
+		cout << "Matriz Mcheck:\n" << Mcheck;
 
-	if( Mresult == Mcheck )
-		cout << "MATCHES!! :-D" << endl;
-	else
-		cout << "DOES NOT MATCH!! :-(" << endl;
+		if( Mresult == Mcheck )
+			cout << "MATCHES!! :-D" << endl;
+		else
+			cout << "DOES NOT MATCH!! :-(" << endl;
+	}
 }
