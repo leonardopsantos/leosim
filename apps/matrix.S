@@ -27,8 +27,8 @@ loop2:
 loop3:
 	ldr r12, [r10], #4
 	ldr r13, [r11], r5
-	mla r19, r19, r12, r13
 	add r22, r22, #1
+	mla r19, r19, r12, r13
 	bneq r22, r4, loop3
 	str r19, [r30], #4
 	add r21, r21, #1
