@@ -15,6 +15,7 @@ public:
 	unsigned long int get_pc();
 	void set_pc(unsigned long int new_pc);
 	void set_target_pc(unsigned long int new_pc);
+	void branch_set();
 	void branch_clear();
 	void update_pc();
 

@@ -772,11 +772,12 @@ instructionBRConditional::instructionBRConditional(unsigned long int addr,
 		string mem_tag):
 	instructionBRConditionalClass()
 {
-	this->num_sources = 2;
-	this->sourcesTypes[0] = instSources::REGISTER;
+	this->num_sources = 3;
+	this->sourcesTypes[0] = instSources::IMMEDIATE;
 	this->sourcesTypes[1] = instSources::REGISTER;
-	this->sources_idx[0] = reg1;
-	this->sources_idx[1] = reg2;
+	this->sourcesTypes[2] = instSources::REGISTER;
+	this->sources_idx[1] = reg1;
+	this->sources_idx[2] = reg2;
 	this->memory_pos = addr;
 	this->destsTypes[0] = instDest::BRANCH_CONDITIONAL;
 	this->tag = mem_tag;
@@ -789,18 +790,18 @@ void instructionBRConditional::print(ostream& where) const
 		where << "BEq";
 	else
 		where << "BNEq";
-	where << " r" << this->sources_idx[0];
-	where << ", r" << this->sources_idx[1];
+	where << " r" << this->sources_idx[1];
+	where << ", r" << this->sources_idx[2];
 	where << ", " << this->tag;
 }
 
 void instructionBRConditional::execute()
 {
 	if( this->is_equal == true &&
-	    this->sources_values[0] == this->sources_values[1] )
+	    this->sources_values[1] == this->sources_values[2] )
 		this->should_jump = true;
 	else if( this->is_equal == false &&
-	    this->sources_values[0] != this->sources_values[1] )
+	    this->sources_values[1] != this->sources_values[2] )
 		this->should_jump = true;
 	else
 		this->should_jump = false;
@@ -815,11 +816,12 @@ instructionBRImmCond::instructionBRImmCond(unsigned long int addr,
 		string mem_tag):
 	instructionBRConditionalClass()
 {
-	this->num_sources = 2;
-	this->sourcesTypes[0] = instSources::REGISTER;
-	this->sourcesTypes[1] = instSources::IMMEDIATE;
-	this->sources_idx[0] = reg1;
-	this->sources_idx[1] = imm;
+	this->num_sources = 3;
+	this->sourcesTypes[0] = instSources::IMMEDIATE;
+	this->sourcesTypes[1] = instSources::REGISTER;
+	this->sourcesTypes[2] = instSources::IMMEDIATE;
+	this->sources_idx[1] = reg1;
+	this->sources_idx[2] = imm;
 	this->memory_pos = addr;
 	this->destsTypes[0] = instDest::BRANCH_CONDITIONAL;
 	this->tag = mem_tag;
@@ -832,8 +834,8 @@ void instructionBRImmCond::print(ostream& where) const
 		where << "BEq";
 	else
 		where << "BNEq";
-	where << " r" << this->sources_idx[0];
-	where << ", #" << this->sources_idx[1];
+	where << " r" << this->sources_idx[1];
+	where << ", #" << this->sources_idx[2];
 	where << ", " << this->tag;
 }
 

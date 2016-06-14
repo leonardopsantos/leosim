@@ -35,6 +35,11 @@ void sim_processor_state::set_target_pc(unsigned long int new_pc)
 	this->branch = true;
 }
 
+void sim_processor_state::branch_set()
+{
+	this->branch = true;
+}
+
 void sim_processor_state::branch_clear()
 {
 	this->branch = false;

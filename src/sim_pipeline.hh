@@ -35,6 +35,8 @@ public:
 
 	void forward_data(instruction *insta, instruction *instb);
 
+	void set_pc_jump(instruction *inst);
+	void forward_branch(instruction *inst);
 public:
 	sim_system *system;
 	cache_instructions *cacheiL1If;

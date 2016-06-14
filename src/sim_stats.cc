@@ -22,7 +22,8 @@ ostream& operator<<(ostream& os, const sim_stats& stats)
 	os << "Simulation Statistics: " << endl;
 	os << "  Total ticks :  " << stats.ticks_total << endl;
 	os << "  Ticks inserted due to data dependencies:  " << stats.ticks_halted << endl;
-	os << "  Total instructions commited :  " << stats.instructions_total << endl;
+	os << "  Ticks inserted due to missed jump prediction:  " << stats.ticks_halted_jumps << endl;
+	os << "  Total instructions committed :  " << stats.instructions_total << endl;
 
 	int useful_insts = 0, x;
 

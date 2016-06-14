@@ -165,15 +165,18 @@ ostream& operator<<(ostream& os, const Matrix& d)
 
 void matrix_main(simulator &leosim)
 {
-	Matrix Ma(4,3);
-	Matrix Mb(3,4);
-	Matrix Mresult(Ma.rows,Mb.columns);
+#if 1
+	Matrix Ma(2,2);
+	Matrix Mb(2,2);
 
 	int da[]={1,2,3,4,5,6,7,8,9,10,11,12,13,14,15, 16};
 
 	memcpy(Ma.data, da, Ma.columns*Ma.rows*sizeof(int));
 	memcpy(Mb.data, da, Mb.columns*Mb.rows*sizeof(int));
-
+#else
+	Matrix Ma(100,100);
+	Matrix Mb(100,100);
+#endif
 	Matrix Mcheck = Ma*Mb;
 
 	if( debug_level > 0 ) {
@@ -187,6 +190,8 @@ void matrix_main(simulator &leosim)
 	//	r2 = # de linhas A
 	//	r3 = # de colunas B
 	//	r4 = # de colunas A
+
+	Matrix Mresult(Ma.rows,Mb.columns);
 
 	leosim.system.cpu.register_bank[0] = (unsigned long int) Ma.data;
 	leosim.system.cpu.register_bank[1] = (unsigned long int) Mb.data;
@@ -208,9 +213,10 @@ void matrix_main(simulator &leosim)
 		cout << "Matriz Mresult:\n" << Mresult;
 		cout << "Matriz Mcheck:\n" << Mcheck;
 
-		if( Mresult == Mcheck )
-			cout << "MATCHES!! :-D" << endl;
-		else
-			cout << "DOES NOT MATCH!! :-(" << endl;
 	}
+	if( Mresult == Mcheck )
+		cout << "MATCHES!! :-D" << endl;
+	else
+		cout << "DOES NOT MATCH!! :-(" << endl;
+
 }

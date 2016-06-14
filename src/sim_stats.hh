@@ -20,6 +20,7 @@ public:
 public:
 	unsigned int ticks_total;
 	unsigned int ticks_halted;
+	unsigned int ticks_halted_jumps;
 	unsigned int instructions_total;
 	unsigned int instructions_by_type[static_cast< std::size_t >( instClasses::maxInstClasses )];
 };
