@@ -70,14 +70,7 @@ unsigned long int sim_pipeline::decode(unsigned long int curr_tick, instruction 
 	for(int i = 0; i < inst->num_sources; i++) {
 		switch(inst->sourcesTypes[i]) {
 		case instSources::REGISTER:
-			#ifdef SIMCPU_FEATURE_FORWARD
-			if( inst->sources_forward[i] == false ) {
-				inst->sources_values[i] = this->cpu->register_read(inst->sources_idx[i]);
-				inst->sources_forward[i] = false;
-			}
-			#else
 			inst->sources_values[i] = this->cpu->register_read(inst->sources_idx[i]);
-			#endif
 			break;
 		case instSources::IMMEDIATE:
 		case instSources::MEMORY:
@@ -235,7 +228,18 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick)
 	unsigned long int curr_pc = this->cpu_state->get_pc();
 	bool halt_pipeline = false;
 
-	#ifndef SIMCPU_FEATURE_FORWARD
+	#ifdef SIMCPU_FEATURE_FORWARD
+	this->decodeToExecute->forward_clear();
+	if( this->decodeToExecute->depends(this->executeToMemory) == true &&
+			this->executeToMemory->inst_class == instClasses::MEM &&
+			this->executeToMemory->sourcesTypes[0] == instSources::MEMORY) {
+		// Dependency on loads needs at least one NOP
+		halt_pipeline = true;
+	} else {
+		forward_data(this->decodeToExecute, this->executeToMemory);
+	}
+	forward_data(this->decodeToExecute, this->memoryToCommit);
+	#else
 	if( this->fetchToDecode->depends(this->decodeToExecute) == true ||
 		this->fetchToDecode->depends(this->executeToMemory) == true ||
 		this->fetchToDecode->depends(this->memoryToCommit) == true )
@@ -255,21 +259,37 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick)
 		this->memory(curr_tick, this->executeToMemory);
 
 	/* EXECUTE */
+	#ifdef SIMCPU_FEATURE_FORWARD
+	if( halt_pipeline == true ) {
+		if( debug_level > 0 )
+			cout << "Execute: " << *this->decodeToExecute << " (held)" << endl;
+	} else {
+		if( debug_level > 0 )
+			cout << "Execute: " << *this->decodeToExecute << endl;
+		if( this->decodeToExecute->is_dud == false )
+			this->execute(curr_tick, this->decodeToExecute);
+	}
+	#else
 	if( debug_level > 0 )
 		cout << "Execute: " << *this->decodeToExecute << endl;
-
-	#ifdef SIMCPU_FEATURE_FORWARD
-	this->decodeToExecute->forward_clear();
-	forward_data(this->decodeToExecute, this->executeToMemory);
-	forward_data(this->decodeToExecute, this->memoryToCommit);
-	#endif
 	if( this->decodeToExecute->is_dud == false )
 		this->execute(curr_tick, this->decodeToExecute);
+	#endif
 
 	this->memoryToCommit->update_stats();
 	this->lastCommit = this->memoryToCommit;
 	this->memoryToCommit = this->executeToMemory;
+
+
+	#ifdef SIMCPU_FEATURE_FORWARD
+	if( halt_pipeline == true ) {
+		this->executeToMemory = &staticNOP;
+	} else {
+		this->executeToMemory = this->decodeToExecute;
+	}
+	#else
 	this->executeToMemory = this->decodeToExecute;
+	#endif
 
 	if( halt_pipeline == false ) {
 		/* DECODE */
@@ -356,7 +376,9 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick)
 			cout << "Decode:  " << *this->fetchToDecode << " (held)" << endl;
 			cout << "Fetch:   " << *this->fetchToDecode << " (held)" << endl;
 		}
+		#ifndef SIMCPU_FEATURE_FORWARD
 		this->decodeToExecute = &staticNOP;
+		#endif
 		simulator_stats.ticks_halted++;
 	}
 
