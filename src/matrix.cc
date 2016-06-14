@@ -165,7 +165,7 @@ ostream& operator<<(ostream& os, const Matrix& d)
 
 void matrix_main(simulator &leosim)
 {
-#if 1
+#ifdef DEBUG
 	Matrix Ma(2,2);
 	Matrix Mb(2,2);
 

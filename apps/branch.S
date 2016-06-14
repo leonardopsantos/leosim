@@ -11,9 +11,10 @@
 //	bneq r11, #-0xcA, loop4
 //	beq r12, r14, loop5
 
-	bxeq r11, #77, r18
-	blxeq r11, #-99, r19
-	bxeq r11, #0xFb, r20
-	blxneq r11, #-0xcA, r21
-	bxeq r12, r14, r22
-	END
+//	bxeq r11, #77, r18
+//	blxeq r11, #-99, r19
+//	bxeq r11, #0xFb, r20
+//	blxneq r11, #-0xcA, r21
+//	bxeq r12, r14, r22
+
+	bneq r22, r4, loop3

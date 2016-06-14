@@ -11,12 +11,16 @@
 //	ldr r5, [r1, #-40] !
 //	ldr r5, [r1, #-0x100] !
 	// post-indexed r5 = mem[r1], r1 = r1+0x3
-	ldr r5, [r1], #3
+//	ldr r5, [r1], #3
 //	ldr r5, [r1], #0x3
 //	ldr r5, [r1], #-0x0ff
 //	ldr r5, [r1], #-0x0FF
 //	ldr r5, [r1], #-7
-	ldr r5, [r1], r7
+	mov r19, #5
+	mov r30, #7
+//	ldr r5, [r1], r7
+
+
 	// register
 //	str r5, [r1]
 //	str	r7,	[r15]
@@ -37,3 +41,5 @@
 //	str r5, [r1], #0xff
 //	str r5, [r1], #0x7F
 //	str r5, [r1], #-0x0D7
+
+	str r19, [r30], #4

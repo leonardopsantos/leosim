@@ -33,4 +33,6 @@ public:
 	}
 };
 
+//#define DEBUG
+
 #endif /* SRC_SIM_HH_ */

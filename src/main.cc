@@ -12,7 +12,11 @@
 
 #include "matrix.hh"
 
+#ifdef DEBUG
+int debug_level = 1;
+#else
 int debug_level = 0;
+#endif
 
 using namespace std;
 
@@ -48,7 +52,7 @@ int main ( int argc, char *argv[])
 }
 #endif
 
-
+#if 1
 int main ()
 {
 	ifstream infile("apps/matrix.S");
@@ -66,4 +70,4 @@ int main ()
 
 	return 0;
 }
-
+#endif
