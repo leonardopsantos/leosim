@@ -644,8 +644,8 @@ instructionSTROff::instructionSTROff(unsigned long int addr, long int s1, long i
 	this->sourcesTypes[1] = instSources::IMMEDIATE;
 	this->sources_values[1] = imm;
 
-	this->destsTypes[0] = instDest::REGISTER;
-	this->dests_idx[0] = d;
+	this->destsTypes[0] = instDest::MEMORY;
+	this->destination_values[0] = d;
 	this->memory_pos = addr;
 }
 
