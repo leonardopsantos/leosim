@@ -984,10 +984,10 @@ instruction* instructionFactory::buildInstruction(unsigned long int addr, string
 	regex mul_regex("^[ \t]*mul[ \t]*r([0-9]+),[ \t]*r([0-9]+),[ \t]*(r([0-9]+)|#(([-0-9])+|([-0]+x[0-9a-fA-F]+)))[ \t]*$", std::regex_constants::extended | std::regex_constants::icase);
 	regex mla_regex("^[ \t]*mla[ \t]*r([0-9]+),[ \t]*r([0-9]+),[ \t]*r([0-9]+),[ \t]*(r([0-9]+)|#(([-0-9])+|([-0]+x[0-9a-fA-F]+)))[ \t]*$", std::regex_constants::extended | std::regex_constants::icase);
 
-	regex branch_regex("^[ \t]*(b|bl)[ \t]*([0-9a-zA-Z]+)$", std::regex_constants::extended | std::regex_constants::icase);
+	regex branch_regex("^[ \t]*(b|bl)[ \t]*([_0-9a-zA-Z]+)$", std::regex_constants::extended | std::regex_constants::icase);
 	regex branchx_regex("^[ \t]*(bx|blx)[ \t]*r([0-9]+)$", std::regex_constants::extended | std::regex_constants::icase);
 
-	regex brancheq_regex("^[ \t]*(beq|bleq|bneq|blneq)[ \t]*r([0-9]+),[ \t]*(r([0-9]+)|#(([-0-9])+|([-0]+x[0-9a-fA-F]+))),[ \t]*([0-9a-zA-Z]+)$",
+	regex brancheq_regex("^[ \t]*(beq|bleq|bneq|blneq)[ \t]*r([0-9]+),[ \t]*(r([0-9]+)|#(([-0-9])+|([-0]+x[0-9a-fA-F]+))),[ \t]*([_0-9a-zA-Z]+)$",
 		std::regex_constants::extended | std::regex_constants::icase);
 	regex branchxeq_regex("^[ \t]*(bxeq|bxneq|blxeq|blxneq)[ \t]*r([0-9]+),[ \t]*(r([0-9]+)|#(([-0-9])+|([-0]+x[0-9a-fA-F]+))),[ \t]*r([0-9]+)$",
 		std::regex_constants::extended | std::regex_constants::icase);
