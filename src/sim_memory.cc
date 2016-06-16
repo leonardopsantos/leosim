@@ -70,7 +70,7 @@ int cache_instructions::fill(std::ifstream &infile)
 
 	regex comment_regex("^[ \t]*//", std::regex_constants::extended);
 
-	regex org_regex("^[ \t]*org:[ \t]+0x([0-9a-fA-F]+)", std::regex_constants::extended);
+	regex org_regex("^[ \t]*org:[ \t]*+0x([0-9a-fA-F]+)", std::regex_constants::extended);
 	regex label_regex("^([a-zA-Z0-9_]+):$", std::regex_constants::extended);
 
 	while( getline(infile,line) ) {
