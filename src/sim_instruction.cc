@@ -97,7 +97,7 @@ void instructionNOP::execute() {
 }
 
 void instructionNOP::print(ostream& where) const {
-	where << this->memory_pos << " : NOP";
+	where << "NOP";
 }
 
 instructionClassARITH::instructionClassARITH():instruction()
@@ -148,7 +148,7 @@ void instructionADD::execute() {
 }
 
 void instructionADD::print(ostream& where) const {
-	where << this->memory_pos << " : ADD r" << this->dests_idx[0] << ", r" << this->sources_idx[0] << ", r" << this->sources_idx[1];
+	where << "ADD r" << this->dests_idx[0] << ", r" << this->sources_idx[0] << ", r" << this->sources_idx[1];
 }
 
 instructionADDImm::instructionADDImm():instructionADD()
@@ -368,7 +368,7 @@ void instructionMOV::execute()
 }
 
 void instructionMOV::print(ostream& where) const {
-	where << this->memory_pos << " : MOV r" << this->dests_idx[0] << ", r" << this->sources_idx[0];
+	where << "MOV r" << this->dests_idx[0] << ", r" << this->sources_idx[0];
 }
 
 instructionMOVImm::instructionMOVImm():instructionMOV()
@@ -394,7 +394,7 @@ void instructionMOVImm::execute()
 }
 
 void instructionMOVImm::print(ostream& where) const {
-	where << this->memory_pos << " : MOVImm r" << this->dests_idx[0] << ", #" << this->sources_values[0];
+	where << "MOVImm r" << this->dests_idx[0] << ", #" << this->sources_values[0];
 }
 
 instructionLDR::instructionLDR():instructionClassMEM()
