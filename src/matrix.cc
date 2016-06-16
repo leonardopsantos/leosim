@@ -2,7 +2,7 @@
 #include <stdlib.h>     /* atoi */
 #include <string.h>     /* atoi */
 #include <stdio.h>
-
+#include <fstream>
 
 #include "sim.hh"
 #include "matrix.hh"
@@ -165,7 +165,7 @@ ostream& operator<<(ostream& os, const Matrix& d)
     return os;
 }
 
-void matrix_main(simulator &leosim, int size)
+void matrix_main(int size)
 {
 #ifdef DEBUG
 	Matrix Ma(4,4);
@@ -196,6 +196,21 @@ void matrix_main(simulator &leosim, int size)
 	//	r4 = # de colunas A
 
 	Matrix Mresult(Ma.rows,Mb.columns);
+
+#ifdef SIMCPU_FEATURE_MATRIXACCEL
+	ifstream infile("apps/matrix_accel.S");
+#else
+	ifstream infile("apps/matrix.S");
+#endif
+	if( infile.is_open() == false ) {
+		cout << "Whoa!! Can't open file " << "apps/matrix.S" <<
+				", cowardly giving up...\n";
+	}
+
+	simulator leosim;
+	if( leosim.setup(infile) < 0 ) {
+		cout << "Whoa!! Can't setup simulator! cowardly giving up...\n";
+	}
 
 	leosim.system.cpu.register_bank[0] = (unsigned long int) Ma.data;
 	leosim.system.cpu.register_bank[1] = (unsigned long int) Mb.data;

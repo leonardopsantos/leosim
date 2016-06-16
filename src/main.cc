@@ -11,6 +11,7 @@
 #include "sim.hh"
 
 #include "matrix.hh"
+#include "linked.hh"
 
 #ifdef DEBUG
 int debug_level = 1;
@@ -55,24 +56,10 @@ int main ( int argc, char *argv[])
 #if 1
 int main ( int argc, char *argv[])
 {
-#ifdef SIMCPU_FEATURE_MATRIXACCEL
-	ifstream infile("apps/matrix_accel.S");
-#else
-	ifstream infile("apps/matrix.S");
-#endif
-	if( infile.is_open() == false ) {
-		cout << "Whoa!! Can't open file " << "apps/matrix.S" <<
-				", cowardly giving up...\n";
-	}
-
-	simulator leosim;
-	if( leosim.setup(infile) < 0 ) {
-		cout << "Whoa!! Can't setup simulator! cowardly giving up...\n";
-	}
-
 	int size = atoi(argv[1]);
 
-	matrix_main(leosim, size);
+//	matrix_main(size);
+	linked_main(size);
 
 	return 0;
 }
