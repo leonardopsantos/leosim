@@ -15,6 +15,24 @@
 
 class sim_system;
 
+enum {
+	matrix_bank_FIRST = 32,
+	matrix_bank_A = matrix_bank_FIRST,
+	matrix_bank_DataA,
+	matrix_bank_B,
+	matrix_bank_DataB,
+	matrix_bank_Res,
+	matrix_bank_IncA,
+	matrix_bank_IncB,
+	matrix_bank_Count,
+	matrix_bank_Status,
+	matrix_bank_NUM
+};
+
+#define MATRIX_BANK_BIT_START		0x01
+#define MATRIX_BANK_BIT_RUNNING		0x02
+#define MATRIX_BANK_BIT_STOP		0x80
+
 class sim_processor {
 public:
 	sim_processor(sim_system *system);
@@ -25,8 +43,13 @@ public:
 
 public:
 
+	#ifdef SIMCPU_FEATURE_MATRIXACCEL
+	long int register_bank[44];
+	long int register_bank_old[44];
+	#else
 	long int register_bank[32];
 	long int register_bank_old[32];
+	#endif
 
 public:
 	sim_system *system;

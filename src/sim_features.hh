@@ -12,5 +12,6 @@
 /** Enables forwarding */
 #define SIMCPU_FEATURE_FORWARD
 #define SIMCPU_FEATURE_BRANCHPRED_IDIOT
+#define SIMCPU_FEATURE_MATRIXACCEL
 
 #endif /* SRC_FEATURES_HH_ */

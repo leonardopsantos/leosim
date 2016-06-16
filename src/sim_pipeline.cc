@@ -223,10 +223,42 @@ void sim_pipeline::forward_branch(instruction *inst)
 	}
 }
 
+void sim_pipeline::matrix_accel()
+{
+	unsigned long DA, DB, R, A, B, cont, inc;
+
+	B = this->cpu->register_read(matrix_bank_B);
+	A = this->cpu->register_read(matrix_bank_A);
+
+	DA = this->cpu->register_read(matrix_bank_DataA);
+	DB = this->cpu->register_read(matrix_bank_DataB);
+	R = this->cpu->register_read(matrix_bank_Res);
+	R += DA*DB;
+	this->cpu->register_write(matrix_bank_Res, R);
+
+	inc = this->cpu->register_read(matrix_bank_IncA);
+	DA = this->system->l1dcache.get_content(A);
+	A += inc;
+	this->cpu->register_write(matrix_bank_A, A);
+	this->cpu->register_write(matrix_bank_DataA, DA);
+
+	inc = this->cpu->register_read(matrix_bank_IncB);
+	DB = this->system->l1dcache.get_content(B);
+	B += inc;
+	this->cpu->register_write(matrix_bank_B, B);
+	this->cpu->register_write(matrix_bank_DataB, DB);
+
+	cont = this->cpu->register_read(matrix_bank_Count);
+	this->cpu->register_write(matrix_bank_Count, --cont);
+}
+
 int sim_pipeline::clock_tick(unsigned long int curr_tick)
 {
 	unsigned long int curr_pc = this->cpu_state->get_pc();
-	bool halt_pipeline = false;
+
+	bool halt_decode = false;
+	bool halt_memory = false;
+	bool halt_execute = false;
 
 	#ifdef SIMCPU_FEATURE_FORWARD
 	this->decodeToExecute->forward_clear();
@@ -234,7 +266,7 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick)
 			this->executeToMemory->inst_class == instClasses::MEM &&
 			this->executeToMemory->sourcesTypes[0] == instSources::MEMORY) {
 		// Dependency on loads needs at least one NOP
-		halt_pipeline = true;
+		halt_decode = true;
 	} else {
 		forward_data(this->decodeToExecute, this->executeToMemory);
 	}
@@ -243,8 +275,32 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick)
 	if( this->fetchToDecode->depends(this->decodeToExecute) == true ||
 		this->fetchToDecode->depends(this->executeToMemory) == true ||
 		this->fetchToDecode->depends(this->memoryToCommit) == true )
-		halt_pipeline = true;
+		halt_decode = true;
 	#endif
+
+
+
+	#ifdef SIMCPU_FEATURE_MATRIXACCEL
+	// Matrix accelerator is active, halt memory
+	long int matrix_status = this->cpu->register_read(matrix_bank_Status);
+
+	// TODO: We should probably check if the memory unit is not being
+	// used in this cycle!!
+
+	if( matrix_status & MATRIX_BANK_BIT_START ) {
+		halt_memory = true;
+		matrix_accel();
+		long int cont = this->cpu->register_read(matrix_bank_Count);
+		if( cont == 0 ) {
+			matrix_status &= ~MATRIX_BANK_BIT_START;
+			matrix_status |= MATRIX_BANK_BIT_STOP;
+			this->cpu->register_write(matrix_bank_Status, matrix_status);
+		}
+	} else
+		halt_memory = false;
+	#endif
+
+
 
 	/* COMMIT */
 	if( debug_level > 0 )
@@ -255,12 +311,21 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick)
 	/* MEMORY */
 	if( debug_level > 0 )
 		cout << "Memory:  " << *this->executeToMemory << endl;
+	#ifdef SIMCPU_FEATURE_MATRIXACCEL
+	if( this->executeToMemory->is_dud == false && halt_memory == false )
+	#else
 	if( this->executeToMemory->is_dud == false )
+	#endif
 		this->memory(curr_tick, this->executeToMemory);
 
 	/* EXECUTE */
 	#ifdef SIMCPU_FEATURE_FORWARD
-	if( halt_pipeline == true ) {
+	#ifdef SIMCPU_FEATURE_MATRIXACCEL
+
+	if( halt_decode == true || halt_memory == true ) {
+	#else
+	if( halt_decode == true ) {
+	#endif // SIMCPU_FEATURE_MATRIXACCEL
 		if( debug_level > 0 )
 			cout << "Execute: " << *this->decodeToExecute << " (held)" << endl;
 	} else {
@@ -269,29 +334,56 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick)
 		if( this->decodeToExecute->is_dud == false )
 			this->execute(curr_tick, this->decodeToExecute);
 	}
-	#else
+	#else // SIMCPU_FEATURE_FORWARD
 	if( debug_level > 0 )
 		cout << "Execute: " << *this->decodeToExecute << endl;
+	#ifdef SIMCPU_FEATURE_MATRIXACCEL
+	if( this->decodeToExecute->is_dud == false && halt_memory == false )
+	#else // SIMCPU_FEATURE_MATRIXACCEL
 	if( this->decodeToExecute->is_dud == false )
+	#endif // SIMCPU_FEATURE_MATRIXACCEL
 		this->execute(curr_tick, this->decodeToExecute);
-	#endif
+	#endif // SIMCPU_FEATURE_FORWARD
 
 	this->memoryToCommit->update_stats();
 	this->lastCommit = this->memoryToCommit;
+	#ifdef SIMCPU_FEATURE_MATRIXACCEL
+	if( halt_memory == true ) {
+		this->memoryToCommit = &staticNOP;
+	} else {
+		this->memoryToCommit = this->executeToMemory;
+	}
+	#else
 	this->memoryToCommit = this->executeToMemory;
-
+	#endif
 
 	#ifdef SIMCPU_FEATURE_FORWARD
-	if( halt_pipeline == true ) {
+	#ifdef SIMCPU_FEATURE_MATRIXACCEL
+	if( halt_memory == false ) {
+		if( halt_decode == true ) {
+			this->executeToMemory = &staticNOP;
+		} else {
+			this->executeToMemory = this->decodeToExecute;
+		}
+	}
+	#else
+	if( halt_decode == true ) {
 		this->executeToMemory = &staticNOP;
 	} else {
 		this->executeToMemory = this->decodeToExecute;
 	}
+	#endif // SIMCPU_FEATURE_MATRIXACCEL
 	#else
 	this->executeToMemory = this->decodeToExecute;
 	#endif
 
-	if( halt_pipeline == false ) {
+
+	#ifdef SIMCPU_FEATURE_MATRIXACCEL
+	// If we halted the memory unit, halt everything else
+	halt_decode = halt_memory;
+	#endif
+
+	if( halt_decode == false ) {
 		/* DECODE */
 		if( debug_level > 0 )
 			cout << "Decode:  " << *this->fetchToDecode << endl;
@@ -376,14 +468,11 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick)
 			cout << "Decode:  " << *this->fetchToDecode << " (held)" << endl;
 			cout << "Fetch:   " << *this->fetchToDecode << " (held)" << endl;
 		}
-		#ifndef SIMCPU_FEATURE_FORWARD
+		#if !defined(SIMCPU_FEATURE_FORWARD) || !defined(SIMCPU_FEATURE_MATRIXACCEL)
 		this->decodeToExecute = &staticNOP;
 		#endif
 		simulator_stats.ticks_halted++;
 	}
-
-	/* Executed a conditional branch that was taken,
-	 * need to invalidate the decode and fetch instructions */
 
 	simulator_stats.ticks_total++;
 
@@ -397,13 +486,13 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick)
 int sim_pipeline::clock_tick(unsigned long int curr_tick)
 {
 	unsigned long int curr_pc = this->cpu_state->get_pc();
-	bool halt_pipeline = false;
+	bool halt_decode = false;
 
 	#ifndef SIMCPU_FEATURE_FORWARD
 	if( this->fetchToDecode->depends(this->decodeToExecute) == true ||
 		this->fetchToDecode->depends(this->executeToMemory) == true ||
 		this->fetchToDecode->depends(this->memoryToCommit) == true )
-		halt_pipeline = true;
+		halt_decode = true;
 	#endif
 
 	/* COMMIT */
@@ -447,7 +536,7 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick)
 	this->memoryToCommit = this->executeToMemory;
 	this->executeToMemory = this->decodeToExecute;
 
-	if( halt_pipeline == false ) {
+	if( halt_decode == false ) {
 		/* DECODE */
 		if( debug_level > 0 )
 			cout << "Decode:  " << *this->fetchToDecode << endl;

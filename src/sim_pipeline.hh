@@ -37,6 +37,8 @@ public:
 
 	void set_pc_jump(instruction *inst);
 	void forward_branch(instruction *inst);
+
+	void matrix_accel();
 public:
 	sim_system *system;
 	cache_instructions *cacheiL1If;
