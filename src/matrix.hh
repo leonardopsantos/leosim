@@ -29,6 +29,6 @@ public:
 	friend std::ostream& operator<<(std::ostream& os, const Matrix& d);
 };
 
-void matrix_main(simulator &leosim);
+void matrix_main(simulator &leosim, int size);
 
 #endif /* SRC_MATRIX_HH_ */

@@ -53,9 +53,13 @@ int main ( int argc, char *argv[])
 #endif
 
 #if 1
-int main ()
+int main ( int argc, char *argv[])
 {
+#ifdef SIMCPU_FEATURE_MATRIXACCEL
+	ifstream infile("apps/matrix_accel.S");
+#else
 	ifstream infile("apps/matrix.S");
+#endif
 	if( infile.is_open() == false ) {
 		cout << "Whoa!! Can't open file " << "apps/matrix.S" <<
 				", cowardly giving up...\n";
@@ -66,7 +70,9 @@ int main ()
 		cout << "Whoa!! Can't setup simulator! cowardly giving up...\n";
 	}
 
-	matrix_main(leosim);
+	int size = atoi(argv[1]);
+
+	matrix_main(leosim, size);
 
 	return 0;
 }

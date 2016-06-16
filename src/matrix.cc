@@ -7,6 +7,8 @@
 #include "sim.hh"
 #include "matrix.hh"
 
+#include "sim_features.hh"
+
 extern int debug_level;
 
 using namespace std;
@@ -25,7 +27,7 @@ Matrix::Matrix( int size )
 	this->size = size*size;
 	this->data = new int[this->size];
         int *p = this->data;
-        for(int i = 0; i < this->size; i++)
+        for(unsigned int i = 0; i < this->size; i++)
             *p++ = rand();
 }
 
@@ -163,19 +165,21 @@ ostream& operator<<(ostream& os, const Matrix& d)
     return os;
 }
 
-void matrix_main(simulator &leosim)
+void matrix_main(simulator &leosim, int size)
 {
 #ifdef DEBUG
-	Matrix Ma(2,2);
-	Matrix Mb(2,2);
+	Matrix Ma(4,4);
+	Matrix Mb(4,4);
 
 	int da[]={1,2,3,4,5,6,7,8,9,10,11,12,13,14,15, 16};
 
 	memcpy(Ma.data, da, Ma.columns*Ma.rows*sizeof(int));
 	memcpy(Mb.data, da, Mb.columns*Mb.rows*sizeof(int));
 #else
-	Matrix Ma(100,100);
-	Matrix Mb(100,100);
+//	int values[] = {13, 21, 34, 55, 89, 144, 233, 377, 610};
+
+	Matrix Ma(size,size);
+	Matrix Mb(size,size);
 #endif
 	Matrix Mcheck = Ma*Mb;
 
@@ -214,6 +218,9 @@ void matrix_main(simulator &leosim)
 		cout << "Matriz Mcheck:\n" << Mcheck;
 
 	}
+
+	cout << "Matrix " << size << " ";
+
 	if( Mresult == Mcheck )
 		cout << "MATCHES!! :-D" << endl;
 	else
