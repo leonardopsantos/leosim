@@ -72,7 +72,6 @@ public:
 	bool sources_forward[4];
 	long int destination_values[4];
 	string tag;
-	bool is_dud; /**< Instruction does nothing */
 };
 
 class instructionNOP:public instruction {

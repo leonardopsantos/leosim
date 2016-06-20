@@ -8,6 +8,9 @@
 #ifndef SRC_SIM_PIPELINE_HH_
 #define SRC_SIM_PIPELINE_HH_
 
+#include <vector>
+#include <utility>
+
 #include "sim_clockable.hh"
 #include "sim_processor_state.hh"
 #include "sim_instruction.hh"
@@ -35,7 +38,10 @@ public:
 
 	void forward_data(instruction *insta, instruction *instb);
 
-	void set_pc_jump(instruction *inst);
+	unsigned long get_pc_jump(instruction *inst);
+	bool branch_predictor(instruction *inst);
+	void branch_predictor_update(instruction *inst);
+	void branch_predictor_commit();
 	void forward_branch(instruction *inst);
 
 	void matrix_accel();
@@ -60,6 +66,12 @@ public:
 	instruction *executeToMemory;
 	instruction *memoryToCommit;
 	instruction *lastCommit;
+
+	bool branch_execute_taken;
+	bool branch_decode_taken;
+
+	pair<unsigned long int, bool> predictor_table[10];
+	pair<unsigned long int, bool> predictor_table_new[10];
 };
 
 #endif /* SRC_SIM_PIPELINE_HH_ */

@@ -31,7 +31,6 @@ instruction::instruction() {
 	}
 	this->memory_pos = 0;
 	this->tag = "";
-	this->is_dud = false;
 }
 
 instruction::~instruction() {
@@ -84,7 +83,6 @@ bool instruction::forward_clear()
 
 instructionNOP::instructionNOP() {
 	this->inst_class = instClasses::NOP;
-	this->is_dud = true;
 }
 
 instructionNOP::instructionNOP(unsigned long int addr):
