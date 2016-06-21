@@ -33,6 +33,22 @@ enum {
 #define MATRIX_BANK_BIT_RUNNING		0x02
 #define MATRIX_BANK_BIT_STOP		0x80
 
+enum {
+	linked_bank_FIRST = 32,
+	linked_bank_El = linked_bank_FIRST,
+	linked_bank_Tail,
+	linked_bank_DataSearch,
+	linked_bank_DataOffset,
+	linked_bank_ElData,
+	linked_bank_Result,
+	linked_bank_DataScratch,
+	linked_bank_Status = 41
+};
+
+#define LINKED_BANK_BIT_START	0x01
+#define LINKED_BANK_BIT_FOUND	0x02
+#define LINKED_BANK_BIT_STOP	0x80
+
 class sim_processor {
 public:
 	sim_processor(sim_system *system);

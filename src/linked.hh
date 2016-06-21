@@ -32,8 +32,8 @@ public:
 
 protected:
 	class listElement *next;
-	class listElement *prev;
 	int data;
+	class listElement *prev;
 
 	friend class List;
 };

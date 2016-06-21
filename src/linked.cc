@@ -22,6 +22,8 @@
 
 using namespace std;
 
+extern int debug_level;
+
 int listElement::get_data() {
 	 return this->data;
 }
@@ -180,8 +182,11 @@ ostream& operator<<(ostream& os, const List& d)
 
 void linked_main(int size)
 {
+#ifdef SIMCPU_FEATURE_LINKEDACCEL
+	ifstream infile("apps/linked_accel.S");
+#else
 	ifstream infile("apps/linked.S");
-
+#endif
 	if( infile.is_open() == false ) {
 		cout << "Whoa!! Can't open file " << "apps/linked.S" <<
 				", cowardly giving up...\n";
@@ -193,6 +198,8 @@ void linked_main(int size)
 	}
 
 	List list = List(size);
+	if( debug_level > 0 )
+		cout << list << endl;
 
 	listElement *el = list.get_head();
 	while (el != list.get_tail()) {
@@ -209,7 +216,7 @@ void linked_main(int size)
 
 	leosim.run();
 
-	listElement *result = (listElement*) leosim.system.cpu.register_bank[12];
+	listElement *result = (listElement*) leosim.system.cpu.register_bank[3];
 
 	if( result->get_data() == el->get_data() )
 		cout << "MATCHES!!" << endl;

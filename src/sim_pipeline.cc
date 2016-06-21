@@ -294,6 +294,32 @@ void sim_pipeline::matrix_accel()
 	this->cpu->register_write(matrix_bank_Count, --cont);
 }
 
+void sim_pipeline::linked_accel()
+{
+	unsigned long next, data, sdata, offset, tail, status;
+
+	sdata = this->cpu->register_read(linked_bank_DataSearch);
+	tail = this->cpu->register_read(linked_bank_Tail);
+	next = this->cpu->register_read(linked_bank_El);
+	this->cpu->register_write(linked_bank_Result, next);
+	offset = this->cpu->register_read(linked_bank_DataOffset);
+	data = this->system->l1dcache.get_content(next+offset);
+	this->cpu->register_write(linked_bank_DataScratch, data);
+	next = this->system->l1dcache.get_content(next);
+	this->cpu->register_write(linked_bank_El, next);
+	status = this->cpu->register_read(linked_bank_Status);
+
+	if( data == sdata ) {
+		status &= ~LINKED_BANK_BIT_START;
+		status |= LINKED_BANK_BIT_FOUND | LINKED_BANK_BIT_STOP;
+		this->cpu->register_write(linked_bank_Status, status);
+	} else if( next == 0x00 ) {
+		status &= ~LINKED_BANK_BIT_START;
+		status |= LINKED_BANK_BIT_STOP;
+		this->cpu->register_write(linked_bank_Status, status);
+	}
+}
+
 int sim_pipeline::clock_tick(unsigned long int curr_tick)
 {
 	unsigned long int pc_current = this->cpu_state->get_pc();
@@ -322,12 +348,10 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick)
 		halt_decode = true;
 	#endif
 
-
-
-	#ifdef SIMCPU_FEATURE_MATRIXACCEL
+	#if defined(SIMCPU_FEATURE_MATRIXACCEL) || defined(SIMCPU_FEATURE_LINKEDACCEL)
 	// Matrix accelerator is active, halt memory
 	long int matrix_status = this->cpu->register_read(matrix_bank_Status);
-
+	long int linked_status = this->cpu->register_read(linked_bank_Status);
 	// TODO: We should probably check if the memory unit is not being
 	// used in this cycle!!
 
@@ -340,9 +364,13 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick)
 			matrix_status |= MATRIX_BANK_BIT_STOP;
 			this->cpu->register_write(matrix_bank_Status, matrix_status);
 		}
+	} else if( linked_status & LINKED_BANK_BIT_START ) {
+		halt_memory = true;
+		linked_accel();
 	} else
 		halt_memory = false;
-	#endif
+
+	#endif /* SIMCPU_FEATURE_MATRIXACCEL */
 
 	/* COMMIT */
 	if( debug_level > 0 )
