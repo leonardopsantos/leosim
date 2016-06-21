@@ -10,6 +10,7 @@
 #include <fstream>
 #include <string>
 #include <regex>
+#include <iomanip>
 
 #include "sim_instruction.hh"
 #include "sim_memory.hh"
@@ -146,6 +147,29 @@ void cache_instructions::set_content(unsigned long int address, instruction* ins
 unsigned long int cache_instructions::get_label_address(string label)
 {
 	return this->labels[label];
+}
+
+ostream& operator<<(ostream& os, const cache_instructions& cache)
+{
+	for(map<unsigned long int, instruction*>::const_iterator iterator = cache.content.begin();
+			iterator != cache.content.end(); ++iterator) {
+
+		os << setw(4) << iterator->first << " : " << *iterator->second << endl;
+
+//		if (dynamic_cast<instructionBR*>(iterator->second) == NULL &&
+//		    dynamic_cast<instructionBRConditionalClass*>(iterator->second) == NULL)
+//			continue;
+//
+//		instruction* inst = dynamic_cast<instruction*>(iterator->second);
+//
+//		if( cache.labels.find(inst->tag) == cache.labels.end() ) {
+//			cout << "BAD LABEL " << inst->tag << " !!!!" << endl;
+//			cout << "Can't proceed! Fix you codez!!" << endl;
+//			throw "BAD LABEL";
+//		}
+
+	}
+    return os;
 }
 
 cache_data::cache_data(int lat, int ratio):cache_generic(lat, ratio)

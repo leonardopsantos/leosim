@@ -10,6 +10,7 @@
 
 #include <map>
 #include <fstream>
+#include <iostream>
 
 #include "sim_instruction.hh"
 
@@ -43,6 +44,7 @@ public:
 	void set_content(unsigned long int address, instruction *inst);
 	virtual int fill(std::ifstream &infile);
 	unsigned long int get_label_address(string label);
+	friend ostream& operator<<(ostream& os, const cache_instructions& cache);
 
 public:
 	std::map<unsigned long int, instruction*> content;

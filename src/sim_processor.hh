@@ -44,8 +44,8 @@ public:
 public:
 
 	#ifdef SIMCPU_FEATURE_MATRIXACCEL
-	long int register_bank[44];
-	long int register_bank_old[44];
+	long long int register_bank[44];
+	long long int register_bank_old[44];
 	#else
 	long int register_bank[32];
 	long int register_bank_old[32];

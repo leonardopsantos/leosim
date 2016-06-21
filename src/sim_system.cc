@@ -18,6 +18,10 @@ int sim_system::setup(std::ifstream &input)
 {
 	if( l1icache.fill(input) < 0 )
 		return -1;
+
+	if( debug_level > 0 )
+		cout << l1icache;
+
 	return 0;
 }
 
@@ -38,4 +42,8 @@ void sim_system::run() {
 		cout << "========================================" << endl;
 	}
 	this->current_tick = next_tick;
+
+//	if( this->current_tick > 25 )
+//		throw "Error!!";
+
 }

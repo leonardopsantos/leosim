@@ -196,6 +196,10 @@ void sim_pipeline::forward_data(instruction *insta, instruction *instb)
 					insta->sources_forward[i] == false) {
 				insta->sources_values[i] = instb->destination_values[j];
 				insta->sources_forward[i] = true;
+				if( debug_level > 0 ) {
+					cout << "        Forwarded [" << *insta << "] r" << insta->sources_idx[i] << " from [" << *instb << "] r" << instb->dests_idx[j] << " : "  << hex << instb->destination_values[j] << endl;
+					cout << dec;
+				}
 			}
 		}
 	}
@@ -299,7 +303,6 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick)
 
 	bool halt_decode = false;
 	bool halt_memory = false;
-	bool branch_pred_taken = false;
 
 	#ifdef SIMCPU_FEATURE_FORWARD
 	this->decodeToExecute->forward_clear();
@@ -415,15 +418,17 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick)
 	 if( halt_decode == true )
 		pc_next = pc_current;
 	 else if( branch_predictor(this->decodeToExecute) == false &&
-			 this->branch_execute_taken == true )
+			 this->branch_execute_taken == true ) {
 		 pc_next = get_pc_jump(this->decodeToExecute);
-	 else if( branch_predictor(this->fetchToDecode) == false &&
-			 this->branch_decode_taken == true )
+	 } else if( branch_predictor(this->fetchToDecode) == false &&
+			 this->branch_decode_taken == true ) {
 		 pc_next = get_pc_jump(this->fetchToDecode);
-	 else if( branch_predictor(current_fetch) == true )
+	 } else if( branch_predictor(current_fetch) == true ) {
+		 simulator_stats.branches_predicted_hit++;
 		 pc_next = get_pc_jump(current_fetch);
-	 else
+	 } else {
 		 pc_next = pc_current + 4;
+	 }
 
 	#else
 
@@ -485,8 +490,9 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick)
 		    branch_predictor(this->decodeToExecute) != this->branch_execute_taken ) {
 			decode_next = &staticNOP;
 			fetch_next = &staticNOP;
-			simulator_stats.ticks_halted_jumps++;
-			simulator_stats.ticks_halted_jumps++;
+			simulator_stats.ticks_halted_jumps+=2;
+			simulator_stats.branches_predicted_miss++;
+			simulator_stats.branches_predicted_hit--;
 			/* We missed the prediction */
 			if( this->branch_execute_taken == false )
 				pc_next = this->decodeToExecute->memory_pos+4;
@@ -495,6 +501,8 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick)
 			pc_next = this->fetchToDecode->memory_pos+4;
 			fetch_next = &staticNOP;
 			simulator_stats.ticks_halted_jumps++;
+			simulator_stats.branches_predicted_miss++;
+			simulator_stats.branches_predicted_hit--;
 			if( this->branch_decode_taken == false )
 				pc_next = this->fetchToDecode->memory_pos+4;
 		} else {
@@ -504,6 +512,17 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick)
 
 		this->decodeToExecute = decode_next;
 		this->fetchToDecode = fetch_next;
+
+#if 0
+		/* just stats */
+		if( this->decodeToExecute->destsTypes[0] == instDest::BRANCH_CONDITIONAL &&
+		    branch_predictor(this->decodeToExecute) == this->branch_execute_taken ) {
+			simulator_stats.branches_predicted_hit++;
+		} else if( this->fetchToDecode->destsTypes[0] == instDest::BRANCH &&
+		      branch_predictor(this->fetchToDecode) == this->branch_decode_taken ) {
+			simulator_stats.branches_predicted_hit++;
+		}
+#endif
 
 		#else
 

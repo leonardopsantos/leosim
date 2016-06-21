@@ -56,6 +56,10 @@ int main ( int argc, char *argv[])
 #if 1
 int main ( int argc, char *argv[])
 {
+	if( argc < 2 ) {
+		return usage(argv[0]);
+	}
+
 	int size = atoi(argv[1]);
 
 //	matrix_main(size);

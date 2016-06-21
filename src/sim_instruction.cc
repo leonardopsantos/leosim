@@ -74,9 +74,9 @@ bool instruction::depends(instruction* b)
 	return false;
 }
 
-bool instruction::forward_clear()
+void instruction::forward_clear()
 {
-	for (int i = 0; i < (sizeof(this->sources_forward)/sizeof(this->sources_forward[0])); ++i) {
+	for (unsigned int i = 0; i < (sizeof(this->sources_forward)/sizeof(this->sources_forward[0])); ++i) {
 		this->sources_forward[i] = false;
 	}
 }
@@ -409,8 +409,10 @@ instructionLDR::instructionLDR(unsigned long int addr, long int s1, long int d):
 	this->sources_idx[1] = s1;
 
 	this->sourcesTypes[0] = instSources::MEMORY;
+
 	this->destsTypes[0] = instDest::REGISTER;
 	this->dests_idx[0] = d;
+
 	this->memory_pos = addr;
 }
 
@@ -420,7 +422,7 @@ void instructionLDR::execute()
 }
 
 void instructionLDR::print(ostream& where) const {
-	where << "LDR r" << this->dests_idx[0] << ", [r" << this->sources_idx[0] << "]";
+	where << "LDR r" << this->dests_idx[0] << ", [r" << this->sources_idx[1] << "]";
 }
 
 instructionLDROffReg::instructionLDROffReg():instructionClassMEM()
@@ -761,6 +763,18 @@ instructionBRConditionalClass::instructionBRConditionalClass():instructionClassC
 	this->should_jump = false;
 }
 
+void instructionBRConditionalClass::execute()
+{
+	if( this->is_equal == true &&
+	    this->sources_values[1] == this->sources_values[2] )
+		this->should_jump = true;
+	else if( this->is_equal == false &&
+	    this->sources_values[1] != this->sources_values[2] )
+		this->should_jump = true;
+	else
+		this->should_jump = false;
+}
+
 instructionBRConditional::instructionBRConditional():
 	instructionBRConditionalClass()
 {}
@@ -791,18 +805,6 @@ void instructionBRConditional::print(ostream& where) const
 	where << " r" << this->sources_idx[1];
 	where << ", r" << this->sources_idx[2];
 	where << ", " << this->tag;
-}
-
-void instructionBRConditional::execute()
-{
-	if( this->is_equal == true &&
-	    this->sources_values[1] == this->sources_values[2] )
-		this->should_jump = true;
-	else if( this->is_equal == false &&
-	    this->sources_values[1] != this->sources_values[2] )
-		this->should_jump = true;
-	else
-		this->should_jump = false;
 }
 
 instructionBRImmCond::instructionBRImmCond():
@@ -1001,6 +1003,13 @@ instruction* instructionFactory::buildInstruction(unsigned long int addr, string
 		new_inst = new instructionMOVImm(addr, xx, stol(base_match[1].str()));
 	} else if(regex_match (line, base_match, ldr_reg_regex) && base_match.size() == 4 ) {
 
+
+		cout << line << " : base_match.size() = " << base_match.size() << endl;
+		for (unsigned int i = 0; i < base_match.size(); ++i) {
+			cout << "base_match[" << i << "].str() = " << base_match[i].str() << endl;
+		}
+
+
 		if( base_match[1].str() == "ldr" ) {
 			new_inst = new instructionLDR(addr, stol(base_match[3].str()), stol(base_match[2].str()));
 		} else if( base_match[1].str() == "str" ) {
@@ -1008,6 +1017,17 @@ instruction* instructionFactory::buildInstruction(unsigned long int addr, string
 		}
 
 	} else if(regex_match (line, base_match, ldr_off_regex) && base_match.size() == 7 ) {
+
+
+
+		cout << line << " : base_match.size() = " << base_match.size() << endl;
+		for (unsigned int i = 0; i < base_match.size(); ++i) {
+			cout << "base_match[" << i << "].str() = " << base_match[i].str() << endl;
+		}
+
+
+
+
 
 		long int xx = (base_match[4].str()[1] == 'x' || base_match[4].str()[2] == 'x' ? stol(base_match[4].str(), nullptr, 16) : stol(base_match[4].str()));
 

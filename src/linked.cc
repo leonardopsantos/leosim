@@ -94,7 +94,7 @@ ostream& operator<<(ostream& os, const listElement* d)
 	void *n = d->next;
 	const void *k = d;
 	if( d != NULL )
-		os << p << "->["<< k << ": " << d->data << " ]->" << n << "\n";
+		os << p << "->["<< k << ": " << d->data << " ]->" << n;
     return os;
 }
 
@@ -121,11 +121,11 @@ List::List(int num) {
 	int i;
 	listElement* el, *next;
 
-	el = new listElement(0);
+	el = new listElement(0, 1);
 	this->head = el;
 
 	for(i = 1; i < num; i++) {
-		next = new listElement((listElement*) NULL, el, i);
+		next = new listElement((listElement*) NULL, el, i+1);
 		el->set_next(next);
 		el = next;
 	}
@@ -171,10 +171,10 @@ ostream& operator<<(ostream& os, const List& d)
 	cout << "    Head = " << (void*) d.head << ", Tail: " << (void*) d.tail << endl;
 	listElement *el = d.head;
 	while (el != d.tail) {
-		cout << "    " << el;
+		cout << "    " << el << endl;
 		el = el->get_next();
 	}
-	cout << el;
+	cout << "    " << el << endl;
     return os;
 }
 
@@ -192,19 +192,29 @@ void linked_main(int size)
 		cout << "Whoa!! Can't setup simulator! cowardly giving up...\n";
 	}
 
-	return;
-
 	List list = List(size);
 
-	cout << list;
+	listElement *el = list.get_head();
+	while (el != list.get_tail()) {
+		leosim.system.l1dcache.fill((int*)el, sizeof(listElement)/sizeof(int));
+		el = el->get_next();
+	}
+	leosim.system.l1dcache.fill((int*)el, sizeof(listElement)/sizeof(int));
 
-	listElement *el = list.get_element_by_data(size-1);
+	el = list.get_element_by_data(size);
 
 	leosim.system.cpu.register_bank[0] = (unsigned long int) list.get_head();
 	leosim.system.cpu.register_bank[2] = (unsigned long int) list.get_tail();
 	leosim.system.cpu.register_bank[1] = (long int) el->get_data();
 
 	leosim.run();
+
+	listElement *result = (listElement*) leosim.system.cpu.register_bank[12];
+
+	if( result->get_data() == el->get_data() )
+		cout << "MATCHES!!" << endl;
+	else
+		cout << "DOES NOT matches!!" << endl;
 
 	return;
 }

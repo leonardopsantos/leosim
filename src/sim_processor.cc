@@ -16,7 +16,8 @@ using namespace std;
 sim_processor::sim_processor(sim_system *system):pipeline(system)
 {
 	this->system = system;
-	for (int i = 0; i < (sizeof(register_bank)/sizeof(register_bank[0])); i++) {
+
+	for (unsigned int i = 0; i < (sizeof(register_bank)/sizeof(register_bank[0])); i++) {
 		this->register_bank[i] = 0;
 		this->register_bank_old[i] = 0;
 	}
@@ -99,22 +100,23 @@ void sim_processor::print_register_bank()
 void sim_processor::print_register_bank()
 {
 	cout << "Register Bank:" << endl;
-	for (int i = 0; i < (sizeof(register_bank)/sizeof(register_bank[0])); i+=4) {
+	for (unsigned int i = 0; i < (sizeof(register_bank)/sizeof(register_bank[0])); i+=4) {
 		for (int j = 0; j < 4; ++j) {
 			if( register_bank_old[i+j] != register_bank[i+j] ) {
 				cout << bold_on;
 				cout << "    " << setw(2) << std::right << i+j << " : ";
-				cout << "    " << setw(8) << std::left << register_bank[i+j];
-				cout << bold_off;
+				cout << "    " << setw(8) << std::left << hex << register_bank[i+j];
+				cout << bold_off << dec;
 			} else {
 				cout << bold_off;
 				cout << "    " << setw(2) << std::right << i+j << " : ";
-				cout << "    " << setw(8) << std::left << register_bank[i+j];
+				cout << "    " << setw(8) << std::left << hex << register_bank[i+j];
+				cout << dec;
 			}
 		}
 		cout << endl;
 	}
-	for (int i = 0; i < (sizeof(register_bank)/sizeof(register_bank[0])); i++) {
+	for (unsigned int i = 0; i < (sizeof(register_bank)/sizeof(register_bank[0])); i++) {
 		register_bank_old[i] = register_bank[i];
 	}
 }

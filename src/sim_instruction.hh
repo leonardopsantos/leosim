@@ -57,21 +57,24 @@ public:
 	virtual void print(ostream& where) const;
 
 	bool depends(instruction *b);
-	bool forward_clear();
+	void forward_clear();
 
 public:
 	instClasses inst_class;
+	unsigned long long int memory_pos;
 	int num_sources;
 	instSources sourcesTypes[4];
-	long int sources_idx[4];
+	long long int sources_idx[4];
+	long long int sources_values[4];
+
 	int num_dests;
 	instDest destsTypes[4];
-	long int dests_idx[4];
-	unsigned long int memory_pos;
-	long int sources_values[4];
-	bool sources_forward[4];
-	long int destination_values[4];
+	long long int dests_idx[4];
+	long long int destination_values[4];
+
 	string tag;
+
+	bool sources_forward[4];
 };
 
 class instructionNOP:public instruction {
@@ -294,6 +297,7 @@ public:
 class instructionBRConditionalClass:public instructionClassCTRL {
 public:
 	instructionBRConditionalClass();
+	void execute();
 
 public:
 	bool is_equal;
@@ -305,7 +309,6 @@ public:
 	instructionBRConditional();
 	instructionBRConditional(unsigned long int addr, unsigned long int reg1, unsigned long int reg2, bool condition, string mem_tag);
 	void print(ostream& where) const;
-	void execute();
 };
 
 class instructionBRLConditional:public instructionBRConditionalClass {
