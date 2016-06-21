@@ -218,10 +218,11 @@ void linked_main(int size)
 
 	listElement *result = (listElement*) leosim.system.cpu.register_bank[3];
 
+	cout << "Linked list " << size;
 	if( result->get_data() == el->get_data() )
-		cout << "MATCHES!!" << endl;
+		cout << " MATCHES!!" << endl;
 	else
-		cout << "DOES NOT matches!!" << endl;
+		cout << " DOES NOT matches!!" << endl;
 
 	return;
 }

@@ -26,6 +26,13 @@ ostream& operator<<(ostream& os, const sim_stats& stats)
 	os << "  Total ticks :  " << stats.ticks_total << endl;
 	os << "  Ticks inserted due to data dependencies:  " << stats.ticks_halted << endl;
 	os << "  Ticks inserted due to missed jump prediction:  " << stats.ticks_halted_jumps << endl;
+	os << "  Total instruction cache read accesses: " << stats.memory_instructions_accesses << endl;
+	os << "  Total data cache read accesses: " << stats.memory_data_accesses_read << endl;
+	os << "  Total data cache write accesses: " << stats.memory_data_accesses_write << endl;
+
+	os << "  Matrix accelerator cycles: " << stats.matrix_cycles << endl;
+	os << "  Linked list accelerator cycles: " << stats.linked_cycles << endl;
+
 	os << "  Total instructions committed :  " << stats.instructions_total << endl;
 
 	int useful_insts = 0;

@@ -14,7 +14,9 @@
 
 #include "sim_instruction.hh"
 #include "sim_memory.hh"
-//#include "sim_system.hh"
+#include "sim_stats.hh"
+
+extern sim_stats simulator_stats;
 
 extern int debug_level;
 
@@ -136,6 +138,7 @@ cache_instructions::~cache_instructions()
 
 instruction* cache_instructions::get_content(unsigned long int address)
 {
+	simulator_stats.memory_instructions_accesses++;
 	return this->content[address];
 }
 
@@ -180,11 +183,13 @@ cache_data::~cache_data()
 
 long int cache_data::get_content(unsigned long int address)
 {
+	simulator_stats.memory_data_accesses_read++;
 	return this->content[address];
 }
 
 void cache_data::set_content(unsigned long int address, long int data)
 {
+	simulator_stats.memory_data_accesses_write++;
 	this->content[address] = data;
 }
 

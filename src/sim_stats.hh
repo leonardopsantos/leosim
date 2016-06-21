@@ -23,6 +23,11 @@ public:
 	unsigned int ticks_halted_jumps;
 	unsigned int branches_predicted_hit;
 	unsigned int branches_predicted_miss;
+	unsigned int memory_instructions_accesses;
+	unsigned int memory_data_accesses_read;
+	unsigned int memory_data_accesses_write;
+	unsigned int matrix_cycles;
+	unsigned int linked_cycles;
 	unsigned int instructions_total;
 	unsigned int instructions_by_type[static_cast< std::size_t >( instClasses::maxInstClasses )];
 };

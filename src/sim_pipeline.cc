@@ -292,6 +292,8 @@ void sim_pipeline::matrix_accel()
 
 	cont = this->cpu->register_read(matrix_bank_Count);
 	this->cpu->register_write(matrix_bank_Count, --cont);
+
+	simulator_stats.matrix_cycles++;
 }
 
 void sim_pipeline::linked_accel()
@@ -318,6 +320,7 @@ void sim_pipeline::linked_accel()
 		status |= LINKED_BANK_BIT_STOP;
 		this->cpu->register_write(linked_bank_Status, status);
 	}
+	simulator_stats.linked_cycles++;
 }
 
 int sim_pipeline::clock_tick(unsigned long int curr_tick)
