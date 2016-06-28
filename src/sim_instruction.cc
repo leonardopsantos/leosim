@@ -610,9 +610,9 @@ instructionSTR::instructionSTR(unsigned long int addr, long int s1, long int d):
 	this->num_dests = 1;
 
 	this->sourcesTypes[0] = instSources::REGISTER;
-	this->sources_idx[0] = s1;
+	this->sources_idx[0] = d;
 	this->sourcesTypes[1] = instSources::REGISTER;
-	this->sources_idx[1] = d;
+	this->sources_idx[1] = s1;
 
 	this->destsTypes[0] = instDest::MEMORY;
 
@@ -626,7 +626,7 @@ void instructionSTR::execute()
 }
 
 void instructionSTR::print(ostream& where) const {
-	where << "STR r" << this->dests_idx[0] << ", [r" << this->sources_idx[0] << "]";
+	where << "STR r" << this->sources_idx[0] << ", [r" << this->sources_idx[1] << "]";
 }
 
 instructionSTROff::instructionSTROff():instructionClassMEM()
@@ -635,22 +635,30 @@ instructionSTROff::instructionSTROff():instructionClassMEM()
 instructionSTROff::instructionSTROff(unsigned long int addr, long int s1, long int imm, long int d):
 		instructionClassMEM()
 {
-	this->num_sources = 2;
+	this->num_sources = 3;
 	this->num_dests = 1;
 
 	this->sourcesTypes[0] = instSources::REGISTER;
-	this->sources_idx[0] = s1;
+	this->sources_idx[0] = d;
+	this->sourcesTypes[1] = instSources::REGISTER;
+	this->sources_idx[1] = s1;
 
-	this->sourcesTypes[1] = instSources::IMMEDIATE;
-	this->sources_values[1] = imm;
+	this->sourcesTypes[2] = instSources::REGISTER;
+	this->sources_values[2] = imm;
 
 	this->destsTypes[0] = instDest::MEMORY;
-	this->destination_values[0] = d;
+
 	this->memory_pos = addr;
 }
 
 void instructionSTROff::print(ostream& where) const {
-	where << "STRoff r" << this->dests_idx[0] << ", [r" << this->sources_idx[0] << ", #" << this->sources_values[1] << "]";
+	where << "STRoff r" << this->sources_idx[0] << ", [r" << this->sources_idx[1] << ", #" << this->sources_values[2] << "]";
+}
+
+void instructionSTROff::execute()
+{
+	this->destination_values[0] = this->sources_values[0];
+	this->dests_idx[0] = this->sources_values[1]+this->sources_values[2];
 }
 
 instructionSTRPre::instructionSTRPre():instructionSTROff()
@@ -821,7 +829,7 @@ instructionBRImmCond::instructionBRImmCond(unsigned long int addr,
 	this->sourcesTypes[1] = instSources::REGISTER;
 	this->sourcesTypes[2] = instSources::IMMEDIATE;
 	this->sources_idx[1] = reg1;
-	this->sources_idx[2] = imm;
+	this->sources_values[2] = imm;
 	this->memory_pos = addr;
 	this->destsTypes[0] = instDest::BRANCH_CONDITIONAL;
 	this->tag = mem_tag;
@@ -835,7 +843,7 @@ void instructionBRImmCond::print(ostream& where) const
 	else
 		where << "BNEq";
 	where << " r" << this->sources_idx[1];
-	where << ", #" << this->sources_idx[2];
+	where << ", #" << this->sources_values[2];
 	where << ", " << this->tag;
 }
 
@@ -1002,14 +1010,6 @@ instruction* instructionFactory::buildInstruction(unsigned long int addr, string
 		long int xx = (base_match[2].str()[1] == 'x' || base_match[2].str()[2] == 'x' ? stol(base_match[2].str(), nullptr, 16) : stol(base_match[2].str()));
 		new_inst = new instructionMOVImm(addr, xx, stol(base_match[1].str()));
 	} else if(regex_match (line, base_match, ldr_reg_regex) && base_match.size() == 4 ) {
-
-
-		cout << line << " : base_match.size() = " << base_match.size() << endl;
-		for (unsigned int i = 0; i < base_match.size(); ++i) {
-			cout << "base_match[" << i << "].str() = " << base_match[i].str() << endl;
-		}
-
-
 		if( base_match[1].str() == "ldr" ) {
 			new_inst = new instructionLDR(addr, stol(base_match[3].str()), stol(base_match[2].str()));
 		} else if( base_match[1].str() == "str" ) {
@@ -1017,18 +1017,6 @@ instruction* instructionFactory::buildInstruction(unsigned long int addr, string
 		}
 
 	} else if(regex_match (line, base_match, ldr_off_regex) && base_match.size() == 7 ) {
-
-
-
-		cout << line << " : base_match.size() = " << base_match.size() << endl;
-		for (unsigned int i = 0; i < base_match.size(); ++i) {
-			cout << "base_match[" << i << "].str() = " << base_match[i].str() << endl;
-		}
-
-
-
-
-
 		long int xx = (base_match[4].str()[1] == 'x' || base_match[4].str()[2] == 'x' ? stol(base_match[4].str(), nullptr, 16) : stol(base_match[4].str()));
 
 		if( base_match[1].str() == "ldr" ) {

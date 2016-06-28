@@ -43,7 +43,8 @@ public:
 	instruction *get_content(unsigned long int address);
 	void set_content(unsigned long int address, instruction *inst);
 	virtual int fill(std::ifstream &infile);
-	unsigned long int get_label_address(string label);
+	unsigned long int get_address_by_label(string label);
+	string get_label_by_address(unsigned long int addr) const;
 	friend ostream& operator<<(ostream& os, const cache_instructions& cache);
 
 public:

@@ -147,9 +147,19 @@ void cache_instructions::set_content(unsigned long int address, instruction* ins
 	this->content[address] = inst;
 }
 
-unsigned long int cache_instructions::get_label_address(string label)
+unsigned long int cache_instructions::get_address_by_label(string label)
 {
 	return this->labels[label];
+}
+
+string cache_instructions::get_label_by_address(unsigned long int addr) const
+{
+	for(map<string, unsigned long int>::const_iterator iterator = this->labels.begin();
+			iterator != this->labels.end(); ++iterator) {
+		if( iterator->second == addr )
+			return iterator->first;
+	}
+	return "";
 }
 
 ostream& operator<<(ostream& os, const cache_instructions& cache)
@@ -157,22 +167,13 @@ ostream& operator<<(ostream& os, const cache_instructions& cache)
 	for(map<unsigned long int, instruction*>::const_iterator iterator = cache.content.begin();
 			iterator != cache.content.end(); ++iterator) {
 
+		string s = cache.get_label_by_address(iterator->first);
+		if( s != "" )
+			os << s << " :"<< endl;
+
 		os << setw(4) << iterator->first << " : " << *iterator->second << endl;
-
-//		if (dynamic_cast<instructionBR*>(iterator->second) == NULL &&
-//		    dynamic_cast<instructionBRConditionalClass*>(iterator->second) == NULL)
-//			continue;
-//
-//		instruction* inst = dynamic_cast<instruction*>(iterator->second);
-//
-//		if( cache.labels.find(inst->tag) == cache.labels.end() ) {
-//			cout << "BAD LABEL " << inst->tag << " !!!!" << endl;
-//			cout << "Can't proceed! Fix you codez!!" << endl;
-//			throw "BAD LABEL";
-//		}
-
 	}
-    return os;
+	return os;
 }
 
 cache_data::cache_data(int lat, int ratio):cache_generic(lat, ratio)

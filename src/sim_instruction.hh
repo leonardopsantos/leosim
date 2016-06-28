@@ -249,6 +249,7 @@ public:
 	instructionSTROff();
 	instructionSTROff(unsigned long int addr, long int s1, long int imm, long int d);
 	void print(ostream& where) const;
+	void execute();
 };
 
 class instructionSTRPre:public instructionSTROff {

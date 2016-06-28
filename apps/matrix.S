@@ -1,16 +1,10 @@
 org: 0x00000000
 //	r0 = ponteiro para matriz A
-//	mov r0, #0
 //	r1 = ponteiro para matriz B
-//	mov r1, #1000
 //	r30 = ponteiro para matriz resultante
-//	mov r30, #2000
 //	r2 = # de linhas A
-//	mov r2, #2
 //	r3 = # de colunas B
-//	mov r3, #2
 //	r4 = # de colunas A
-//	mov r4, #3
 
 	mul r5, r3, #4
 	mov r20, #0

@@ -12,6 +12,7 @@
 
 #include "matrix.hh"
 #include "linked.hh"
+#include "bfs.hh"
 
 #ifdef DEBUG
 int debug_level = 1;
@@ -63,7 +64,8 @@ int main ( int argc, char *argv[])
 	int size = atoi(argv[1]);
 
 //	matrix_main(size);
-	linked_main(size);
+//	linked_main(size);
+	bfs_main(size);
 
 	return 0;
 }

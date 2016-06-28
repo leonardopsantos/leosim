@@ -101,7 +101,7 @@ unsigned long int sim_pipeline::decode(unsigned long int curr_tick, instruction 
 			unsigned long int pc_target;
 
 			if( inst->sourcesTypes[0] == instSources::IMMEDIATE )
-				pc_target = this->cacheiL1If->get_label_address(inst->tag);
+				pc_target = this->cacheiL1If->get_address_by_label(inst->tag);
 			else if( inst->sourcesTypes[0] == instSources::REGISTER )
 				pc_target = inst->sources_values[0];
 			this->cpu_state->set_target_pc(pc_target);
@@ -210,7 +210,7 @@ unsigned long sim_pipeline::get_pc_jump(instruction *inst)
 	unsigned long int pc_target = 0;
 	if( inst->destsTypes[0] == instDest::BRANCH_CONDITIONAL ||
 	    inst->destsTypes[0] == instDest::BRANCH )
-		pc_target = this->cacheiL1If->get_label_address(inst->tag);
+		pc_target = this->cacheiL1If->get_address_by_label(inst->tag);
 	return pc_target;
 }
 
@@ -260,7 +260,7 @@ void sim_pipeline::forward_branch(instruction *inst)
 	if( inst->destsTypes[0] == instDest::BRANCH ||
 		inst->destsTypes[0] == instDest::BRANCH_CONDITIONAL ) {
 		unsigned long int pc_target;
-		pc_target = this->cacheiL1If->get_label_address(inst->tag);
+		pc_target = this->cacheiL1If->get_address_by_label(inst->tag);
 		this->cpu_state->set_target_pc(pc_target);
 	}
 }
@@ -412,9 +412,7 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick)
 	if( debug_level > 0 )
 		cout << "Execute: " << *this->decodeToExecute << endl;
 	#ifdef SIMCPU_FEATURE_MATRIXACCEL
-	if( this->decodeToExecute->is_dud == false && halt_memory == false )
-	#else // SIMCPU_FEATURE_MATRIXACCEL
-	if( this->decodeToExecute->is_dud == false )
+	if( halt_memory == false )
 	#endif // SIMCPU_FEATURE_MATRIXACCEL
 		this->execute(curr_tick, this->decodeToExecute);
 	#endif // SIMCPU_FEATURE_FORWARD
@@ -527,15 +525,16 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick)
 			/* We missed the prediction */
 			if( this->branch_execute_taken == false )
 				pc_next = this->decodeToExecute->memory_pos+4;
+		// branches in decode as unconditional branches, and thus always taken
+		// the only way we missed prediction is to predict not taken
 		} else if( this->fetchToDecode->destsTypes[0] == instDest::BRANCH &&
-		      branch_predictor(this->fetchToDecode) != this->branch_decode_taken ) {
-			pc_next = this->fetchToDecode->memory_pos+4;
+		      branch_predictor(this->fetchToDecode) == false && this->branch_decode_taken == true ) {
+			// no need to change pc_next
+			decode_next = this->fetchToDecode;
 			fetch_next = &staticNOP;
 			simulator_stats.ticks_halted_jumps++;
 			simulator_stats.branches_predicted_miss++;
 			simulator_stats.branches_predicted_hit--;
-			if( this->branch_decode_taken == false )
-				pc_next = this->fetchToDecode->memory_pos+4;
 		} else {
 			decode_next = this->fetchToDecode;
 			fetch_next = current_fetch;
@@ -585,7 +584,7 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick)
 			cout << "Decode:  (" << this->fetchToDecode->memory_pos << ") " << *this->fetchToDecode << " (held)" << endl;
 			cout << "Fetch:   (" << this->fetchToDecode->memory_pos << ") " << *this->fetchToDecode << " (held)" << endl;
 		}
-		#if !defined(SIMCPU_FEATURE_FORWARD) || !defined(SIMCPU_FEATURE_MATRIXACCEL)
+		#if defined(SIMCPU_FEATURE_FORWARD) && defined(SIMCPU_FEATURE_MATRIXACCEL)
 		this->decodeToExecute = &staticNOP;
 		#endif
 		simulator_stats.ticks_halted++;
@@ -599,237 +598,3 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick)
 
 	return curr_tick + this->latency;
 }
-
-
-
-#if 0
-
-	int sim_pipeline::clock_tick(unsigned long int curr_tick)
-	{
-		unsigned long int curr_pc = this->cpu_state->get_pc();
-
-		bool halt_decode = false;
-		bool halt_memory = false;
-
-		#ifdef SIMCPU_FEATURE_FORWARD
-		this->decodeToExecute->forward_clear();
-		if( this->decodeToExecute->depends(this->executeToMemory) == true &&
-				this->executeToMemory->inst_class == instClasses::MEM &&
-				this->executeToMemory->sourcesTypes[0] == instSources::MEMORY) {
-			// Dependency on loads needs at least one NOP
-			halt_decode = true;
-		} else {
-			forward_data(this->decodeToExecute, this->executeToMemory);
-		}
-		forward_data(this->decodeToExecute, this->memoryToCommit);
-		#else
-		if( this->fetchToDecode->depends(this->decodeToExecute) == true ||
-			this->fetchToDecode->depends(this->executeToMemory) == true ||
-			this->fetchToDecode->depends(this->memoryToCommit) == true )
-			halt_decode = true;
-		#endif
-
-
-
-		#ifdef SIMCPU_FEATURE_MATRIXACCEL
-		// Matrix accelerator is active, halt memory
-		long int matrix_status = this->cpu->register_read(matrix_bank_Status);
-
-		// TODO: We should probably check if the memory unit is not being
-		// used in this cycle!!
-
-		if( matrix_status & MATRIX_BANK_BIT_START ) {
-			halt_memory = true;
-			matrix_accel();
-			long int cont = this->cpu->register_read(matrix_bank_Count);
-			if( cont == 0 ) {
-				matrix_status &= ~MATRIX_BANK_BIT_START;
-				matrix_status |= MATRIX_BANK_BIT_STOP;
-				this->cpu->register_write(matrix_bank_Status, matrix_status);
-			}
-		} else
-			halt_memory = false;
-		#endif
-
-
-
-		/* COMMIT */
-		if( debug_level > 0 )
-			cout << "Commit:  (" << this->memoryToCommit->memory_pos << ") "<< *this->memoryToCommit << endl;
-		if( this->memoryToCommit->is_dud == false )
-			this->commit(curr_tick, this->memoryToCommit);
-
-		/* MEMORY */
-		if( debug_level > 0 )
-			cout << "Memory:  (" << this->executeToMemory->memory_pos << ") " << *this->executeToMemory << endl;
-		#ifdef SIMCPU_FEATURE_MATRIXACCEL
-		if( this->executeToMemory->is_dud == false && halt_memory == false )
-		#else
-		if( this->executeToMemory->is_dud == false )
-		#endif
-			this->memory(curr_tick, this->executeToMemory);
-
-		/* EXECUTE */
-		#ifdef SIMCPU_FEATURE_FORWARD
-		#ifdef SIMCPU_FEATURE_MATRIXACCEL
-
-		if( halt_decode == true || halt_memory == true ) {
-		#else
-		if( halt_decode == true ) {
-		#endif // SIMCPU_FEATURE_MATRIXACCEL
-			if( debug_level > 0 )
-				cout << "Execute: (" << this->decodeToExecute->memory_pos << ") " << *this->decodeToExecute << " (held)" << endl;
-		} else {
-			if( debug_level > 0 )
-				cout << "Execute: (" << this->decodeToExecute->memory_pos << ") " << *this->decodeToExecute << endl;
-			if( this->decodeToExecute->is_dud == false )
-				this->execute(curr_tick, this->decodeToExecute);
-		}
-		#else // SIMCPU_FEATURE_FORWARD
-		if( debug_level > 0 )
-			cout << "Execute: " << *this->decodeToExecute << endl;
-		#ifdef SIMCPU_FEATURE_MATRIXACCEL
-		if( this->decodeToExecute->is_dud == false && halt_memory == false )
-		#else // SIMCPU_FEATURE_MATRIXACCEL
-		if( this->decodeToExecute->is_dud == false )
-		#endif // SIMCPU_FEATURE_MATRIXACCEL
-			this->execute(curr_tick, this->decodeToExecute);
-		#endif // SIMCPU_FEATURE_FORWARD
-
-		this->memoryToCommit->update_stats();
-		this->lastCommit = this->memoryToCommit;
-		#ifdef SIMCPU_FEATURE_MATRIXACCEL
-		if( halt_memory == true ) {
-			this->memoryToCommit = &staticNOP;
-		} else {
-			this->memoryToCommit = this->executeToMemory;
-		}
-		#else
-		this->memoryToCommit = this->executeToMemory;
-		#endif
-
-		#ifdef SIMCPU_FEATURE_FORWARD
-		#ifdef SIMCPU_FEATURE_MATRIXACCEL
-		if( halt_memory == false ) {
-			if( halt_decode == true ) {
-				this->executeToMemory = &staticNOP;
-			} else {
-				this->executeToMemory = this->decodeToExecute;
-			}
-		}
-		#else
-		if( halt_decode == true ) {
-			this->executeToMemory = &staticNOP;
-		} else {
-			this->executeToMemory = this->decodeToExecute;
-		}
-		#endif // SIMCPU_FEATURE_MATRIXACCEL
-		#else
-		this->executeToMemory = this->decodeToExecute;
-		#endif
-
-
-		#ifdef SIMCPU_FEATURE_MATRIXACCEL
-		// If we halted the memory unit, halt everything else
-		if( halt_memory == true )
-			halt_decode = true;
-		#endif
-
-		if( halt_decode == false ) {
-			/* DECODE */
-			if( debug_level > 0 )
-				cout << "Decode:  (" << this->fetchToDecode->memory_pos << ") " << *this->fetchToDecode << endl;
-
-			#ifndef SIMCPU_FEATURE_BRANCHPRED
-			// conditional branch taken
-			if( this->cpu_state->branch == true ) {
-				this->fetchToDecode = &staticNOP;
-				simulator_stats.ticks_halted_jumps++;
-			} else {
-				if( this->fetchToDecode->is_dud == false )
-					this->decode(curr_tick, this->fetchToDecode);
-			}
-			this->decodeToExecute = this->fetchToDecode;
-
-			/* FETCH */
-			instruction *f;
-
-			// branch taken
-			if( this->cpu_state->branch == true ) {
-				this->fetchToDecode = &staticNOP;
-				simulator_stats.ticks_halted_jumps++;
-			} else {
-				this->next_tick_fetch = this->fetch(curr_tick,
-							curr_pc, &f);
-				/* A bad fetch ends the simulation */
-				this->fetchToDecode = (f == NULL ? &staticEND : f);
-			}
-
-			if( debug_level > 0 )
-				cout << "Fetch:   (" << this->fetchToDecode->memory_pos << ") " << *this->fetchToDecode << endl;
-			#else
-
-			if( this->fetchToDecode->is_dud == false )
-				this->decode(curr_tick, this->fetchToDecode);
-			this->decodeToExecute = this->fetchToDecode;
-
-			/* FETCH */
-			instruction *f;
-
-			this->next_tick_fetch = this->fetch(curr_tick,
-						curr_pc, &f);
-			/* A bad fetch ends the simulation */
-			this->fetchToDecode = (f == NULL ? &staticEND : f);
-
-			// predict taken
-			if( (this->fetchToDecode->destsTypes[0] == instDest::BRANCH_CONDITIONAL ||
-			     this->fetchToDecode->destsTypes[0] == instDest::BRANCH) &&
-			     this->fetchToDecode->sourcesTypes[0] == instSources::IMMEDIATE ) {
-				set_pc_jump(this->fetchToDecode);
-				if( debug_level > 0 )
-					cout << "Fetch:   (" << this->fetchToDecode->memory_pos << ") " << *this->fetchToDecode << " (taken)" << endl;
-			} else
-				if( debug_level > 0 )
-					cout << "Fetch:   (" << this->fetchToDecode->memory_pos << ") " << *this->fetchToDecode << endl;
-
-			// conditional branch was NOT taken
-			// branch was NOT taken
-			// we guessed taken, invalidate decode, invalidate fetch, fix PC
-			if( this->executeToMemory->destsTypes[0] == instDest::BRANCH_CONDITIONAL &&
-					this->cpu_state->branch == false ) {
-
-				this->decodeToExecute = &staticNOP;
-				this->fetchToDecode = &staticNOP;
-				// next PC should be EXECUTE inst +4
-				this->cpu_state->set_target_pc(this->executeToMemory->memory_pos+4);
-				simulator_stats.ticks_halted_jumps += 2;
-
-			} else if( this->decodeToExecute->destsTypes[0] == instDest::BRANCH &&
-					this->cpu_state->branch == false ) {
-
-				this->fetchToDecode = &staticNOP;
-				// next PC should be EXECUTE inst +4
-				this->cpu_state->set_target_pc(this->decodeToExecute->memory_pos+4);
-				simulator_stats.ticks_halted_jumps++;
-			}
-			#endif
-
-			this->cpu_state->update_pc();
-		} else {
-			if( debug_level > 0 ) {
-				cout << "Decode:  (" << this->fetchToDecode->memory_pos << ") " << *this->fetchToDecode << " (held)" << endl;
-				cout << "Fetch:   (" << this->fetchToDecode->memory_pos << ") " << *this->fetchToDecode << " (held)" << endl;
-			}
-			#if !defined(SIMCPU_FEATURE_FORWARD) || !defined(SIMCPU_FEATURE_MATRIXACCEL)
-			this->decodeToExecute = &staticNOP;
-			#endif
-			simulator_stats.ticks_halted++;
-		}
-
-		simulator_stats.ticks_total++;
-
-		return curr_tick + this->latency;
-	}
-
-
-#endif
