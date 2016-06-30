@@ -56,15 +56,14 @@ class cache_data: public cache_generic {
 public:
 	cache_data(int lat, int ratio);
 	~cache_data();
-	long int get_content(unsigned long int address);
+	long long int get_content(unsigned long long int address);
 	void set_content(unsigned long int address, long int data);
 	virtual int fill(std::ifstream &infile);
 	virtual int fill(int *data, int size);
 	virtual int dump(int *data, int size);
 
 public:
-	std::map<unsigned long int, long int> content;
-//	std::map<string, unsigned long int> labels;
+	std::map<unsigned long long int, long long int> content;
 };
 
 #endif /* SRC_MEMORY_HH_ */

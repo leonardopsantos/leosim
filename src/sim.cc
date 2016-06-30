@@ -34,6 +34,7 @@ void simulator::run() {
 	} catch (exception_simulator_stop &stp) {
 //		cout << stp.what() << endl;
 		cout << simulator_stats << endl;
+	} catch (const char* s) {
+		cout << s << endl;
 	}
 }
-

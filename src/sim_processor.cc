@@ -38,7 +38,7 @@ long int sim_processor::register_read(unsigned long int idx)
 	return this->register_bank[idx];
 }
 
-void sim_processor::register_write(unsigned long int idx, long int value)
+void sim_processor::register_write(unsigned long int idx, long long int value)
 {
 	if( idx >= (sizeof(register_bank)/sizeof(register_bank[0])) )
 		throw "Register index out of bounds!";
@@ -55,47 +55,6 @@ std::ostream& bold_off(std::ostream& os)
 {
     return os << "\e[0m";
 }
-
-#if 0
-
-void sim_processor::print_register_bank()
-{
-	cout << "Register Bank: ";
-	for (int i = 0; i < (sizeof(register_bank)/sizeof(register_bank[0]))/2; ++i) {
-		cout << setw(4) << i;
-	}
-	cout << endl;
-	cout << "               ";
-	for (int i = (sizeof(register_bank)/sizeof(register_bank[0]))/2;
-			i < (sizeof(register_bank)/sizeof(register_bank[0])); ++i) {
-		cout << setw(4) << i;
-	}
-	cout << endl << endl;
-
-	cout << "          00   ";
-	for (int i = 0; i < (sizeof(register_bank)/sizeof(register_bank[0]))/2; ++i) {
-		cout << setw(4) << register_bank[i];
-	}
-	cout << endl;
-
-
-
-
-	cout << "          16   ";
-	for (int i = (sizeof(register_bank)/sizeof(register_bank[0]))/2;
-			i < (sizeof(register_bank)/sizeof(register_bank[0])); ++i) {
-		cout << setw(4) << register_bank[i];
-	}
-	cout << endl;
-
-	/*
-	for (int i = 0; i < (sizeof(register_bank)/sizeof(register_bank[0])); ++i) {
-		cout << setw(2) <<
-
-	}*/
-}
-
-#endif
 
 void sim_processor::print_register_bank()
 {

@@ -323,6 +323,157 @@ void sim_pipeline::linked_accel()
 	simulator_stats.linked_cycles++;
 }
 
+void sim_pipeline::bfs_accel()
+{
+	int status = this->cpu->register_read(bfs_bank_Status);
+
+	int state = status & BFS_BANK_STATE_MASK;
+	int next_state = state;
+
+	switch(state) {
+	case BFS_BANK_STATE_IDLE:
+		if( (status & BFS_BANK_BIT_START ) == 1 )
+			next_state = BFS_BANK_STATE_1;
+		break;
+	case BFS_BANK_STATE_1:
+	{
+		int n, inc, cont;
+		unsigned long long int AdjP;
+
+		AdjP = this->cpu->register_read(bfs_bank_AdjP);
+		inc = this->cpu->register_read(bfs_bank_AdjPInc);
+		cont = this->cpu->register_read(bfs_bank_Cont);
+
+		n = this->system->l1dcache.get_content(AdjP);
+
+		cont--;
+		AdjP += inc;
+
+		this->cpu->register_write(bfs_bank_AdjN, n);
+		this->cpu->register_write(bfs_bank_AdjP, AdjP);
+		this->cpu->register_write(bfs_bank_Cont, cont);
+
+		if( cont == 0 )
+			next_state = BFS_BANK_STATE_4;
+		else
+			next_state = BFS_BANK_STATE_2;
+		break;
+	}
+	case BFS_BANK_STATE_2:
+	{
+		int n, next_n, inc, cont, visited;
+		unsigned long long int AdjP, visitedP;
+
+		AdjP = this->cpu->register_read(bfs_bank_AdjP);
+		inc = this->cpu->register_read(bfs_bank_AdjPInc);
+		n = this->cpu->register_read(bfs_bank_AdjN);
+		cont = this->cpu->register_read(bfs_bank_Cont);
+		visitedP = this->cpu->register_read(bfs_bank_VisitedP);
+
+		visitedP += n<<2;
+		visited = this->system->l1dcache.get_content(visitedP);
+		next_n = this->system->l1dcache.get_content(AdjP);
+
+		cont--;
+		AdjP += inc;
+
+		this->cpu->register_write(bfs_bank_AdjNOld, n);
+		this->cpu->register_write(bfs_bank_AdjN, next_n);
+		this->cpu->register_write(bfs_bank_AdjP, AdjP);
+		this->cpu->register_write(bfs_bank_Cont, cont);
+
+		if( visited == 1 && cont != 0 ) {
+			next_state = BFS_BANK_STATE_2;
+		} else if ( visited == 1 && cont == 0 ) {
+			next_state = BFS_BANK_STATE_4;
+		} else if( visited == 0 ) {
+			next_state = BFS_BANK_STATE_3;
+		} else {
+			status &= ~BFS_BANK_BIT_START;
+			status |= BFS_BANK_BIT_STOP;
+			next_state = BFS_BANK_STATE_IDLE;
+			cout << "WTF ?!?!?!?!" << endl;
+		}
+
+		break;
+	}
+	case BFS_BANK_STATE_3:
+	{
+		int adjNOld, cont;
+		unsigned long long int visitedP, queueTailP;
+
+		adjNOld = this->cpu->register_read(bfs_bank_AdjNOld);
+		queueTailP = this->cpu->register_read(bfs_bank_QueueTailP);
+		visitedP = this->cpu->register_read(bfs_bank_VisitedP);
+		cont = this->cpu->register_read(bfs_bank_Cont);
+
+		visitedP += adjNOld<<2;
+		this->system->l1dcache.set_content(visitedP, 1);
+		this->system->l1dcache.set_content(queueTailP, adjNOld);
+
+		queueTailP += 4;
+		this->cpu->register_write(bfs_bank_QueueTailP, queueTailP);
+
+		if( cont == 0 ) {
+			next_state = BFS_BANK_STATE_4;
+		} else
+			next_state = BFS_BANK_STATE_2;
+
+		break;
+	}
+	case BFS_BANK_STATE_4:
+	{
+		int n, visited;
+		unsigned long long int visitedP;
+
+		n = this->cpu->register_read(bfs_bank_AdjN);
+		visitedP = this->cpu->register_read(bfs_bank_VisitedP);
+
+		visitedP += n<<2;
+		visited = this->system->l1dcache.get_content(visitedP);
+
+		if( visited == 0 )
+			next_state = BFS_BANK_STATE_5;
+		else {
+			status &= ~BFS_BANK_BIT_START;
+			status |= BFS_BANK_BIT_STOP;
+			next_state = BFS_BANK_STATE_IDLE;
+		}
+		break;
+	}
+	case BFS_BANK_STATE_5:
+	{
+		int n;
+		unsigned long long int visitedP, queueTailP;
+
+		n = this->cpu->register_read(bfs_bank_AdjN);
+		queueTailP = this->cpu->register_read(bfs_bank_QueueTailP);
+		visitedP = this->cpu->register_read(bfs_bank_VisitedP);
+
+		visitedP += n<<2;
+		this->system->l1dcache.set_content(visitedP, 1);
+		this->system->l1dcache.set_content(queueTailP, n);
+
+		queueTailP += 4;
+		this->cpu->register_write(bfs_bank_QueueTailP, queueTailP);
+
+		status &= ~BFS_BANK_BIT_START;
+		status |= BFS_BANK_BIT_STOP;
+		next_state = BFS_BANK_STATE_IDLE;
+
+		break;
+	}
+	default:
+		next_state = BFS_BANK_STATE_IDLE;
+		break;
+	}
+
+	status = (status & ~BFS_BANK_STATE_MASK) | next_state;
+	this->cpu->register_write(bfs_bank_Status, status);
+
+	simulator_stats.bfs_cycles++;
+}
+
 int sim_pipeline::clock_tick(unsigned long int curr_tick)
 {
 	unsigned long int pc_current = this->cpu_state->get_pc();
@@ -351,10 +502,11 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick)
 		halt_decode = true;
 	#endif
 
-	#if defined(SIMCPU_FEATURE_MATRIXACCEL) || defined(SIMCPU_FEATURE_LINKEDACCEL)
+	#if defined(SIMCPU_FEATURE_MATRIXACCEL) || defined(SIMCPU_FEATURE_LINKEDACCEL) || defined(SIMCPU_FEATURE_BFSACCEL)
 	// Matrix accelerator is active, halt memory
 	long int matrix_status = this->cpu->register_read(matrix_bank_Status);
 	long int linked_status = this->cpu->register_read(linked_bank_Status);
+	long int bfs_status = this->cpu->register_read(bfs_bank_Status);
 	// TODO: We should probably check if the memory unit is not being
 	// used in this cycle!!
 
@@ -370,6 +522,9 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick)
 	} else if( linked_status & LINKED_BANK_BIT_START ) {
 		halt_memory = true;
 		linked_accel();
+	} else if( bfs_status & BFS_BANK_BIT_START ) {
+		halt_memory = true;
+		bfs_accel();
 	} else
 		halt_memory = false;
 
@@ -543,18 +698,7 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick)
 		this->decodeToExecute = decode_next;
 		this->fetchToDecode = fetch_next;
 
-#if 0
-		/* just stats */
-		if( this->decodeToExecute->destsTypes[0] == instDest::BRANCH_CONDITIONAL &&
-		    branch_predictor(this->decodeToExecute) == this->branch_execute_taken ) {
-			simulator_stats.branches_predicted_hit++;
-		} else if( this->fetchToDecode->destsTypes[0] == instDest::BRANCH &&
-		      branch_predictor(this->fetchToDecode) == this->branch_decode_taken ) {
-			simulator_stats.branches_predicted_hit++;
-		}
-#endif
-
-		#else
+		#else // SIMCPU_FEATURE_BRANCHPRED
 
 		// conditional branch taken at execute stage,
 		// invalidate decode and fetch
@@ -574,7 +718,7 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick)
 		} else {
 			this->fetchToDecode = current_fetch;
 		}
-		#endif
+		#endif // SIMCPU_FEATURE_BRANCHPRED
 
 		this->cpu_state->set_target_pc(pc_next);
 		this->cpu_state->update_pc();
@@ -584,9 +728,9 @@ int sim_pipeline::clock_tick(unsigned long int curr_tick)
 			cout << "Decode:  (" << this->fetchToDecode->memory_pos << ") " << *this->fetchToDecode << " (held)" << endl;
 			cout << "Fetch:   (" << this->fetchToDecode->memory_pos << ") " << *this->fetchToDecode << " (held)" << endl;
 		}
-		#if defined(SIMCPU_FEATURE_FORWARD) && defined(SIMCPU_FEATURE_MATRIXACCEL)
-		this->decodeToExecute = &staticNOP;
-		#endif
+//		#if defined(SIMCPU_FEATURE_FORWARD) && defined(SIMCPU_FEATURE_MATRIXACCEL)
+//		this->decodeToExecute = &staticNOP;
+//		#endif
 		simulator_stats.ticks_halted++;
 	}
 

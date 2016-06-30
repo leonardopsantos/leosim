@@ -46,6 +46,7 @@ public:
 
 	void matrix_accel();
 	void linked_accel();
+	void bfs_accel();
 public:
 	sim_system *system;
 	cache_instructions *cacheiL1If;

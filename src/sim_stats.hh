@@ -28,6 +28,7 @@ public:
 	unsigned int memory_data_accesses_write;
 	unsigned int matrix_cycles;
 	unsigned int linked_cycles;
+	unsigned int bfs_cycles;
 	unsigned int instructions_total;
 	unsigned int instructions_by_type[static_cast< std::size_t >( instClasses::maxInstClasses )];
 };

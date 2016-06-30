@@ -32,6 +32,7 @@ ostream& operator<<(ostream& os, const sim_stats& stats)
 
 	os << "  Matrix accelerator cycles: " << stats.matrix_cycles << endl;
 	os << "  Linked list accelerator cycles: " << stats.linked_cycles << endl;
+	os << "  BFS accelerator cycles: " << stats.bfs_cycles << endl;
 
 	os << "  Total instructions committed :  " << stats.instructions_total << endl;
 

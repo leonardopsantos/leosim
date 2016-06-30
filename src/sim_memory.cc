@@ -182,7 +182,7 @@ cache_data::cache_data(int lat, int ratio):cache_generic(lat, ratio)
 cache_data::~cache_data()
 {}
 
-long int cache_data::get_content(unsigned long int address)
+long long int cache_data::get_content(unsigned long long int address)
 {
 	simulator_stats.memory_data_accesses_read++;
 	return this->content[address];
